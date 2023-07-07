@@ -13,11 +13,8 @@ const COLORS = {
     wallDark: "#012975", // "#003f5c"
     rays: "#ffa600",
 };
-const CELL_SIZE = 32;
 
 const FOV = toRadians(60);
-
-
 
 function clearScreen() {
     context.fillStyle = "red";
@@ -133,7 +130,7 @@ function getVCollision(angle) {
             : Math.floor(nextX / CELL_SIZE) - 1;
         const cellY = Math.floor(nextY / CELL_SIZE);
 
-        if (outOfMapBounds(cellX, cellY)) {
+        if (world.outOfMapBounds(cellX, cellY)) {
             return {
                 angle,
                 distance: distance(player.x, player.y,Infinity , Infinity),
@@ -173,7 +170,7 @@ function getHCollision(angle) {
             ? Math.floor(nextY / CELL_SIZE) - 1
             : Math.floor(nextY / CELL_SIZE);
 
-        if (outOfMapBounds(cellX, cellY)) {
+        if (world.outOfMapBounds(cellX, cellY)) {
             return {
                 angle,
                 distance: distance(player.x, player.y,Infinity , Infinity),
@@ -202,9 +199,6 @@ function distance(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 }
 
-function outOfMapBounds(x, y) {
-    return x < 0 || x >= map[0].length || y < 0 || y >= map.length;
-}
 
 function redraw(rays){
     clearScreen()
