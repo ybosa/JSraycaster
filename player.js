@@ -3,11 +3,12 @@ class Player{
     y;
     angle;
     speed;
+    sidewaysSpeed;
     world
 
     movePlayer() {
-        let x = this.x + Math.cos(this.angle) * this.speed;
-        let y = this.y + Math.sin(this.angle) * this.speed;
+        let x = this.x + Math.cos(this.angle) * this.speed - Math.sin(this.angle) * this.sidewaysSpeed;
+        let y = this.y + Math.sin(this.angle) * this.speed + Math.cos(this.angle) * this.sidewaysSpeed;
 
         if(!this.world.collides(x,y)){
             this.x = x
@@ -22,5 +23,6 @@ class Player{
         this.angle = angle;
         this.speed = speed;
         this.world = world;
+        this.sidewaysSpeed = 0;
     }
 }

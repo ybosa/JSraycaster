@@ -1,8 +1,8 @@
 let COLORS = {
-    floor: "#d52b1e", // "#ff6361"
-    ceiling: "#ffffff", // "#012975",
-    wall: "#013aa6", // "#58508d"
-    wallDark: "#012975", // "#003f5c"
+    floor: "#376707", // "#ff6361"
+    ceiling: "#7ccecc", // "#012975",
+    wall: "#8a8a8f", // "#58508d"
+    wallDark: "#66686c", // "#003f5c"
     rays: "#ffa600",
 };
 let FOV = toRadians(75);
