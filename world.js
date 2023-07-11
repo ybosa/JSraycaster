@@ -1,5 +1,3 @@
-const CELL_SIZE = 32;
-
 class World{
     map = this.regenMap()
 
@@ -14,9 +12,9 @@ class World{
     }
 
     regenMap(x = 25,y=25){
-        const newMap = [];
+        let newMap = [];
         for(let i = 0; i < y; i++){
-            const line = [];
+            let line = [];
             for(let j = 0; j < x; j++){
                 line.push((Math.random() > 0.25) ? 0 : 1)
             }

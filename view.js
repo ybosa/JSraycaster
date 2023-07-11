@@ -1,25 +1,31 @@
-const COLORS = {
+let COLORS = {
     floor: "#d52b1e", // "#ff6361"
     ceiling: "#ffffff", // "#012975",
     wall: "#013aa6", // "#58508d"
     wallDark: "#012975", // "#003f5c"
     rays: "#ffa600",
 };
-const FOV = toRadians(75);
+let FOV = toRadians(75);
 
 class view {
+
     SCREEN_WIDTH = window.innerWidth;
     SCREEN_HEIGHT = window.innerHeight;
     canvas;
     context;
 
+    world;
+    player;
 
-    constructor(Canvas = document.createElement("canvas")) {
+    constructor(Canvas = document.createElement("canvas"), world,player) {
         this.canvas = Canvas;
         this.canvas.setAttribute("width", this.SCREEN_WIDTH);
         this.canvas.setAttribute("height", this.SCREEN_HEIGHT);
         document.body.appendChild(this.canvas);
         this.context = this.canvas.getContext("2d");
+
+        this.world = world
+        this.player = player
     }
 
     clearScreen() {
@@ -28,7 +34,7 @@ class view {
     }
 
     renderMinimap(posX = 0, posY = 0, scale, rays) {
-        const cellSize = scale * CELL_SIZE;
+        let cellSize = scale * CELL_SIZE;
         map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
@@ -75,8 +81,8 @@ class view {
 
     renderScene(rays) {
         rays.forEach((ray, i) => {
-            const distance = fixFishEye(ray.distance, ray.angle, player.angle);
-            const wallHeight = ((CELL_SIZE * 5) / distance) * 277;
+            let distance = fixFishEye(ray.distance, ray.angle, player.angle);
+            let wallHeight = ((CELL_SIZE * 5) / distance) * 277;
             this.context.fillStyle = ray.vertical ? COLORS.wallDark : COLORS.wall;
             this.context.fillRect(i, this.SCREEN_HEIGHT / 2 - wallHeight / 2, 1, wallHeight);
             this.context.fillStyle = COLORS.floor;
@@ -92,42 +98,42 @@ class view {
     }
 
     castRay(angle) {
-        const vCollision = this.getVCollision(angle);
-        const hCollision = this.getHCollision(angle);
+        let vCollision = this.getVCollision(angle);
+        let hCollision = this.getHCollision(angle);
 
         return hCollision.distance >= vCollision.distance ? vCollision : hCollision;
     }
 
     getRays() {
-        const initialAngle = player.angle - FOV / 2;
-        const numberOfRays = this.SCREEN_WIDTH;
-        const angleStep = FOV / numberOfRays;
+        let initialAngle = player.angle - FOV / 2;
+        let numberOfRays = this.SCREEN_WIDTH;
+        let angleStep = FOV / numberOfRays;
         return Array.from({ length: numberOfRays }, (_, i) => {
-            const angle = initialAngle + i * angleStep;
+            let angle = initialAngle + i * angleStep;
             return this.castRay(angle);
         });
     }
 
     getVCollision(angle) {
-        const right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2);
+        let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2);
 
-        const firstX = right
+        let firstX = right
             ? Math.floor(player.x / CELL_SIZE) * CELL_SIZE + CELL_SIZE
             : Math.floor(player.x / CELL_SIZE) * CELL_SIZE;
 
-        const firstY = player.y + (firstX - player.x) * Math.tan(angle);
+        let firstY = player.y + (firstX - player.x) * Math.tan(angle);
 
-        const xA = right ? CELL_SIZE : -CELL_SIZE;
-        const yA = xA * Math.tan(angle);
+        let xA = right ? CELL_SIZE : -CELL_SIZE;
+        let yA = xA * Math.tan(angle);
 
         let wall;
         let nextX = firstX;
         let nextY = firstY;
         while (!wall) {
-            const cellX = right
+            let cellX = right
                 ? Math.floor(nextX / CELL_SIZE)
                 : Math.floor(nextX / CELL_SIZE) - 1;
-            const cellY = Math.floor(nextY / CELL_SIZE);
+            let cellY = Math.floor(nextY / CELL_SIZE);
 
             if (world.outOfMapBounds(cellX, cellY)) {
                 return {
@@ -151,21 +157,21 @@ class view {
     }
 
     getHCollision(angle) {
-        const up = Math.abs(Math.floor(angle / Math.PI) % 2);
-        const firstY = up
+        let up = Math.abs(Math.floor(angle / Math.PI) % 2);
+        let firstY = up
             ? Math.floor(player.y / CELL_SIZE) * CELL_SIZE
             : Math.floor(player.y / CELL_SIZE) * CELL_SIZE + CELL_SIZE;
-        const firstX = player.x + (firstY - player.y) / Math.tan(angle);
+        let firstX = player.x + (firstY - player.y) / Math.tan(angle);
 
-        const yA = up ? -CELL_SIZE : CELL_SIZE;
-        const xA = yA / Math.tan(angle);
+        let yA = up ? -CELL_SIZE : CELL_SIZE;
+        let xA = yA / Math.tan(angle);
 
         let wall;
         let nextX = firstX;
         let nextY = firstY;
         while (!wall) {
-            const cellX = Math.floor(nextX / CELL_SIZE);
-            const cellY = up
+            let cellX = Math.floor(nextX / CELL_SIZE);
+            let cellY = up
                 ? Math.floor(nextY / CELL_SIZE) - 1
                 : Math.floor(nextY / CELL_SIZE);
 
@@ -191,7 +197,7 @@ class view {
     }
 
     redraw(){
-        const rays = this.getRays()
+        let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
         this.renderMinimap(0, 0, 0.75, rays);
@@ -207,7 +213,7 @@ function distance(x1, y1, x2, y2) {
 }
 
 function fixFishEye(distance, angle, playerAngle) {
-    const diff = angle - playerAngle;
+    let diff = angle - playerAngle;
     return distance * Math.cos(diff);
 }
 
