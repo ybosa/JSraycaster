@@ -14,28 +14,35 @@ class view {
     canvas;
     context;
 
-    world;
     player;
+    world;
+    map;
 
-    constructor(Canvas = document.createElement("canvas"), world,player) {
+    constructor(player,Canvas = document.createElement("canvas")) {
         this.canvas = Canvas;
         this.canvas.setAttribute("width", this.SCREEN_WIDTH);
         this.canvas.setAttribute("height", this.SCREEN_HEIGHT);
         document.body.appendChild(this.canvas);
         this.context = this.canvas.getContext("2d");
 
-        this.world = world
-        this.player = player
+        this.player = player;
+        this.world = player.world;
+        this.map = this.world.map;
     }
 
     clearScreen() {
-        this.context.fillStyle = "red";
-        this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT);
+        this.context.fillStyle = COLORS.floor;
+        this.context.fillRect(0, this.SCREEN_HEIGHT/2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT/2);
+        this.context.fillStyle = COLORS.ceiling;
+        this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT/2);
     }
 
-    renderMinimap(posX = 0, posY = 0, scale, rays) {
-        let cellSize = scale * CELL_SIZE;
-        map.forEach((row, y) => {
+    renderMinimap(rays) {
+        let posX = 0, posY = 0;
+        let screenPortion = 1/4 //portion of screen covered
+        let scale = this.SCREEN_WIDTH/ (this.map.length * CELL_SIZE)  * screenPortion  //[px/m] meters to pixels
+        let cellSize = scale * CELL_SIZE ; //[px] pixels each cell takes up
+        this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
                     this.context.fillStyle = "grey";
@@ -85,15 +92,6 @@ class view {
             let wallHeight = ((CELL_SIZE * 5) / distance) * 277;
             this.context.fillStyle = ray.vertical ? COLORS.wallDark : COLORS.wall;
             this.context.fillRect(i, this.SCREEN_HEIGHT / 2 - wallHeight / 2, 1, wallHeight);
-            this.context.fillStyle = COLORS.floor;
-            this.context.fillRect(
-                i,
-                this.SCREEN_HEIGHT / 2 + wallHeight / 2,
-                1,
-                this.SCREEN_HEIGHT / 2 - wallHeight / 2
-            );
-            this.context.fillStyle = COLORS.ceiling;
-            this.context.fillRect(i, 0, 1, this.SCREEN_HEIGHT / 2 - wallHeight / 2);
         });
     }
 
@@ -101,17 +99,7 @@ class view {
         let vCollision = this.getVCollision(angle);
         let hCollision = this.getHCollision(angle);
 
-        return hCollision.distance >= vCollision.distance ? vCollision : hCollision;
-    }
-
-    getRays() {
-        let initialAngle = player.angle - FOV / 2;
-        let numberOfRays = this.SCREEN_WIDTH;
-        let angleStep = FOV / numberOfRays;
-        return Array.from({ length: numberOfRays }, (_, i) => {
-            let angle = initialAngle + i * angleStep;
-            return this.castRay(angle);
-        });
+        return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
     getVCollision(angle) {
@@ -142,7 +130,7 @@ class view {
                     vertical: true,
                 }
             }
-            wall = map[cellY][cellX];
+            wall = (this.map)[cellY][cellX];
             if (!wall) {
                 nextX += xA;
                 nextY += yA;
@@ -183,7 +171,7 @@ class view {
                 }
             }
 
-            wall = map[cellY][cellX];
+            wall = (this.map)[cellY][cellX];
             if (!wall) {
                 nextX += xA;
                 nextY += yA;
@@ -200,7 +188,17 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        this.renderMinimap(0, 0, 0.75, rays);
+        this.renderMinimap( rays);
+    }
+
+    getRays() {
+        let initialAngle = player.angle - FOV / 2;
+        let numberOfRays = this.SCREEN_WIDTH;
+        let angleStep = FOV / numberOfRays;
+        return Array.from({ length: numberOfRays }, (_, i) => {
+            let angle = initialAngle + i * angleStep;
+            return this.castRay(angle);
+        });
     }
 }
 
