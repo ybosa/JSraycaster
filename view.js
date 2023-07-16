@@ -8,6 +8,7 @@ let COLORS = {
 let FOV = toRadians(75);
 
 let imageSet = new Set();
+let missingIMGSet= new Set();
 let missingImgName = "missing.png"
 initMissingIMG()
 
@@ -57,7 +58,7 @@ class view {
         this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
-                    this.context.drawImage(getImage(cell),posX + x * cellSize,posY + y * cellSize,cellSize,cellSize)
+                    this.context.drawImage(getImage(cell.imageName),posX + x * cellSize,posY + y * cellSize,cellSize,cellSize)
                 }
             });
         });
@@ -93,12 +94,15 @@ class view {
     }
 
     renderScene(rays) {
+        this.drawSkybox(getImage(world.sky))
+
+        //render rays
         rays.forEach((ray, i) => {
             if(!ray.block) return;
             let distance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
             let wallHeight = ((CELL_SIZE * 5) / distance) * 277; //[px]height of wall
             let pixelWidth = this.SCREEN_WIDTH/ this.numberOfRays //[px]width of each ray in px
-            let img = getImage(ray.block)
+            let img = getImage(ray.block.imageName)
 
             //process image sampling
             let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width))
@@ -221,6 +225,7 @@ class view {
     }
 
     redraw(){
+        loadImages()
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
@@ -242,6 +247,26 @@ class view {
         return Math.abs(distance/CELL_SIZE * (func(angle) - func(angle + angleStep)))
 
     }
+
+    drawSkybox(img){
+        let rotation = player.angle / (2* Math.PI) - Math.floor(player.angle / (2* Math.PI)) //btw 0 and 1
+
+        let sXStart = rotation * img.width //[px]
+        let sXWidth = FOV / (2 * Math.PI) * img.width          //[px]
+        this.context.drawImage(img,sXStart,0,sXWidth,img.height,0,0,this.SCREEN_WIDTH, this.SCREEN_HEIGHT)
+
+        //reached right end of image
+        if(sXStart + sXWidth > img.width){
+            let sXWDrawn = (img.width - sXStart)
+            let sXWRemain = sXWidth - sXWDrawn
+
+            let scale = this.SCREEN_WIDTH/sXWidth
+            let ScreenPosX= scale * sXWDrawn
+            let ScreenRemainingX = scale * sXWRemain
+
+            this.context.drawImage(img,0,0,sXWRemain,img.height,ScreenPosX,0,ScreenRemainingX, this.SCREEN_HEIGHT)
+        }
+    }
 }
 
 function toRadians(deg) {
@@ -257,25 +282,46 @@ function fixFishEye(distance, angle, playerAngle) {
     return distance * Math.cos(diff);
 }
 
-function getImage(block){
-    if(imageSet[block.imageName]){
-        return imageSet[block.imageName]
+function getImage(imageName){
+    if(imageSet[imageName]){
+        return imageSet[imageName]
     }
-    try {
+    else {
+        missingIMGSet.add(imageName)
+        return imageSet[missingImgName]
+    }
+}
+
+function loadImages(){
+    let removeSet = new Set()
+    missingIMGSet.forEach(image =>{
+        if(imageSet[image] && imageSet[image] !== imageSet[missingImgName]){
+            removeSet.add(image)
+            return;
+        }
+        if(DEBUG_MODE) console.log("loading img: " + image)
         let loadIMG = new Image()
-        loadIMG.src = block.imageName
-        imageSet[block.imageName] = (isImageOk(loadIMG)) ? loadIMG : imageSet[missingImgName] ;
-        return loadIMG
-    }
-    catch (e){
-        imageSet[block.imageName] = imageSet[missingImgName];
-        return  imageSet[missingImgName]
-    }
+        loadIMG.src = IMAGE_PATH+image
+        if(!loadIMG && DEBUG_MODE){
+            console.log("error loading image: " + image)
+        }
+
+        if(!loadIMG){
+            imageSet[image] = imageSet[missingImgName]
+            removeSet.add(image)
+        }
+        else {
+            imageSet[image] = loadIMG
+            removeSet.add(image)
+        }
+    })
+
+    removeSet.forEach(image => missingIMGSet.delete(image))
 }
 
 function initMissingIMG(){
     let loadIMG = new Image()
-    loadIMG.src = missingImgName
+    loadIMG.src = IMAGE_PATH+missingImgName
     if(!loadIMG) console.log("error loading missing image placeholder")
     imageSet[missingImgName] = loadIMG
 }

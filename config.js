@@ -5,4 +5,5 @@ const SCREEN_TICK_RATE = 30;//[hz] screen redraws per second
 
 const MAX_RAYS = -1;// maximum number of rays (-1 for disable)
 
-const DEBUG_MODE = false
+const DEBUG_MODE = true
+const IMAGE_PATH = "./images/"

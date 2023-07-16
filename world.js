@@ -1,5 +1,6 @@
 class World{
     map = this.regenMap()
+    sky = "sky.png"
 
     collides(x,y){
         x = Math.floor(x / CELL_SIZE)
@@ -12,11 +13,14 @@ class World{
     }
 
     regenMap(x = 25,y=25){
+        let block = new Block()
+        block.imageName = "wall.png"
+
         let newMap = [];
         for(let i = 0; i < y; i++){
             let line = [];
             for(let j = 0; j < x; j++){
-                line.push((Math.random() > 0.25) ? 0 : 1)
+                line.push((Math.random() > 0.25) ? 0 : block)
             }
             newMap.push(line)
         }
