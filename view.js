@@ -95,17 +95,32 @@ class view {
     renderScene(rays) {
         rays.forEach((ray, i) => {
             if(!ray.block) return;
-            let distance = fixFishEye(ray.distance, ray.angle, player.angle);
-            let wallHeight = ((CELL_SIZE * 5) / distance) * 277;
-            let width = this.SCREEN_WIDTH/ this.numberOfRays
-            // this.context.fillStyle = ray.vertical ? COLORS.wallDark : COLORS.wall;
-            // this.context.fillRect(i, this.SCREEN_HEIGHT / 2 - wallHeight / 2, 1, wallHeight);
+            let distance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
+            let wallHeight = ((CELL_SIZE * 5) / distance) * 277; //[px]height of wall
+            let pixelWidth = this.SCREEN_WIDTH/ this.numberOfRays //[px]width of each ray in px
             let img = getImage(ray.block)
-            let sampleImageHorizontal = Math.floor(ray.horizontalSample * img.width)
+
+            //process image sampling
+            let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width))
+            let sampleImageHorizontalWidth = Math.abs(Math.floor(ray.hSampleWidth*img.width))
+            sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth /2)
+            if(sampleImageHorizontalWidth <=1 ) {
+                sampleImageHorizontalWidth = 1
+            }
+            else if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
+            else if(sampleImageHorizontal <= 0) sampleImageHorizontal =0
+            //
+
             this.context.drawImage(img,sampleImageHorizontal,
-                0,1, img.height,
-                i* width, this.SCREEN_HEIGHT / 2 - wallHeight / 2, width+1, wallHeight)
+                0,sampleImageHorizontalWidth, img.height,
+                i* pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth+1, wallHeight)
+
+            if(DEBUG_MODE && pixelWidth > 5) {
+                this.context.strokeStyle = 'black';
+                this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth + 1, wallHeight);
+            }
         });
+    //    https://www.youtube.com/watch?v=8RDBa3dkl0g
     }
 
     castRay(angle) {
@@ -150,12 +165,14 @@ class view {
             } else {
             }
         }
+        let Distance =distance(player.x, player.y, nextX, nextY)
         return {
             angle,
-            distance: distance(player.x, player.y, nextX, nextY),
+            distance: Distance,
             vertical: true,
             block : wall,
-            horizontalSample : Math.abs(nextY) - Math.floor(nextY),
+            horizontalSample : (right) ? Math.abs(nextY) - Math.abs(Math.floor(nextY)) : 1- (Math.abs(nextY) - Math.abs(Math.floor(nextY))), // up? checks for img rotation, need to rotate image when facing downwards
+            hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.sin)
         };
     }
 
@@ -192,12 +209,14 @@ class view {
                 nextY += yA;
             }
         }
+        let Distance =distance(player.x, player.y, nextX, nextY)
         return {
             angle,
-            distance: distance(player.x, player.y, nextX, nextY),
+            distance: Distance,
             vertical: false,
             block : wall,
-            horizontalSample : Math.abs(nextX) - Math.floor(nextX),
+            horizontalSample : (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1- (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
+            hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.cos)
         };
     }
 
@@ -215,6 +234,13 @@ class view {
             let angle = initialAngle + i * angleStep;
             return this.castRay(angle);
         });
+    }
+
+    calcImageSampleWidth(distance, angle, func) {
+        let angleStep = FOV / this.numberOfRays
+
+        return Math.abs(distance/CELL_SIZE * (func(angle) - func(angle + angleStep)))
+
     }
 }
 
@@ -273,5 +299,3 @@ function isImageOk(img) {
     // No other way of checking: assume it’s ok.
     return true;
 }
-
-function calcHorizontalSample(next){}

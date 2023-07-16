@@ -1,5 +1,5 @@
 let world = new World()
-let player = new Player(CELL_SIZE * 1.5,CELL_SIZE * 2,toRadians(0),0,world)
+let player = new Player(CELL_SIZE * 1.5,CELL_SIZE * 2,toRadians(90),0,world)
 let viewer = new view(player)
 let controller = new Controller(player,viewer.canvas)
 
