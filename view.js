@@ -116,8 +116,8 @@ class view {
                 i* pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth+1, wallHeight)
 
             if(DEBUG_MODE && pixelWidth > 5) {
-                this.context.strokeStyle = 'black';
-                this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth + 1, wallHeight);
+                this.context.strokeStyle = 'red';
+                this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 4, pixelWidth + 1, wallHeight/4);
             }
         });
     //    https://www.youtube.com/watch?v=8RDBa3dkl0g
