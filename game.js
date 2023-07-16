@@ -1,18 +1,23 @@
-let TICK = 30; //currently, both physics and graphics run from this tick
 let world = new World()
-let map = world.map
-let player = new Player(CELL_SIZE * 1.5,CELL_SIZE * 2,toRadians(0),0,world)
-let viewer = new view()
+let player = new Player(CELL_SIZE * 1.5,CELL_SIZE * 2,toRadians(90),0,world)
+let viewer = new view(player)
 let controller = new Controller(player,viewer.canvas)
 
 function gameLoop() {
     player.movePlayer();
-    viewer.redraw();
-    // displayFPS()
 }
 
-setInterval(gameLoop,TICK);
+function displayLoop(){
+    viewer.redraw();
+    displayFPS()
+}
 
+console.log("interval: "+ 1000/GAME_TICK_RATE)
+
+setInterval(gameLoop,1000/GAME_TICK_RATE);
+setInterval(displayLoop,1000/SCREEN_TICK_RATE);
+
+//fps counter stuff
 let time = Date.now()
 let count = 0
 

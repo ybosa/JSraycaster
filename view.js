@@ -7,44 +7,57 @@ let COLORS = {
 };
 let FOV = toRadians(75);
 
+let imageSet = new Set();
+let missingImgName = "missing.png"
+initMissingIMG()
+
+
 class view {
 
     SCREEN_WIDTH = window.innerWidth;
     SCREEN_HEIGHT = window.innerHeight;
+    numberOfRays;
     canvas;
     context;
 
-    world;
     player;
+    world;
+    map;
 
-    constructor(Canvas = document.createElement("canvas"), world,player) {
+    constructor(player,Canvas = document.createElement("canvas")) {
         this.canvas = Canvas;
         this.canvas.setAttribute("width", this.SCREEN_WIDTH);
         this.canvas.setAttribute("height", this.SCREEN_HEIGHT);
         document.body.appendChild(this.canvas);
         this.context = this.canvas.getContext("2d");
+        this.context.imageSmoothingEnabled = false;
 
-        this.world = world
-        this.player = player
+        this.player = player;
+        this.world = player.world;
+        this.map = this.world.map;
+
+        if(MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
+        else this.numberOfRays = MAX_RAYS
+
+
     }
 
     clearScreen() {
-        this.context.fillStyle = "red";
-        this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT);
+        this.context.fillStyle = COLORS.floor;
+        this.context.fillRect(0, this.SCREEN_HEIGHT/2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT/2);
+        this.context.fillStyle = COLORS.ceiling;
+        this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT/2);
     }
 
-    renderMinimap(posX = 0, posY = 0, scale, rays) {
-        let cellSize = scale * CELL_SIZE;
-        map.forEach((row, y) => {
+    renderMinimap(rays) {
+        let posX = 0, posY = 0;
+        let screenPortion = 1/4 //portion of screen covered
+        let scale = this.SCREEN_WIDTH/ (this.map.length * CELL_SIZE)  * screenPortion  //[px/m] meters to pixels
+        let cellSize = scale * CELL_SIZE ; //[px] pixels each cell takes up
+        this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
-                    this.context.fillStyle = "grey";
-                    this.context.fillRect(
-                        posX + x * cellSize,
-                        posY + y * cellSize,
-                        cellSize,
-                        cellSize
-                    );
+                    this.context.drawImage(getImage(cell),posX + x * cellSize,posY + y * cellSize,cellSize,cellSize)
                 }
             });
         });
@@ -81,37 +94,40 @@ class view {
 
     renderScene(rays) {
         rays.forEach((ray, i) => {
-            let distance = fixFishEye(ray.distance, ray.angle, player.angle);
-            let wallHeight = ((CELL_SIZE * 5) / distance) * 277;
-            this.context.fillStyle = ray.vertical ? COLORS.wallDark : COLORS.wall;
-            this.context.fillRect(i, this.SCREEN_HEIGHT / 2 - wallHeight / 2, 1, wallHeight);
-            this.context.fillStyle = COLORS.floor;
-            this.context.fillRect(
-                i,
-                this.SCREEN_HEIGHT / 2 + wallHeight / 2,
-                1,
-                this.SCREEN_HEIGHT / 2 - wallHeight / 2
-            );
-            this.context.fillStyle = COLORS.ceiling;
-            this.context.fillRect(i, 0, 1, this.SCREEN_HEIGHT / 2 - wallHeight / 2);
+            if(!ray.block) return;
+            let distance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
+            let wallHeight = ((CELL_SIZE * 5) / distance) * 277; //[px]height of wall
+            let pixelWidth = this.SCREEN_WIDTH/ this.numberOfRays //[px]width of each ray in px
+            let img = getImage(ray.block)
+
+            //process image sampling
+            let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width))
+            let sampleImageHorizontalWidth = Math.abs(Math.floor(ray.hSampleWidth*img.width))
+            sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth /2)
+            if(sampleImageHorizontalWidth <=1 ) {
+                sampleImageHorizontalWidth = 1
+            }
+            else if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
+            else if(sampleImageHorizontal <= 0) sampleImageHorizontal =0
+            //
+
+            this.context.drawImage(img,sampleImageHorizontal,
+                0,sampleImageHorizontalWidth, img.height,
+                i* pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth+1, wallHeight)
+
+            if(DEBUG_MODE && pixelWidth > 5) {
+                this.context.strokeStyle = 'red';
+                this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 4, pixelWidth + 1, wallHeight/4);
+            }
         });
+    //    https://www.youtube.com/watch?v=8RDBa3dkl0g
     }
 
     castRay(angle) {
         let vCollision = this.getVCollision(angle);
         let hCollision = this.getHCollision(angle);
 
-        return hCollision.distance >= vCollision.distance ? vCollision : hCollision;
-    }
-
-    getRays() {
-        let initialAngle = player.angle - FOV / 2;
-        let numberOfRays = this.SCREEN_WIDTH;
-        let angleStep = FOV / numberOfRays;
-        return Array.from({ length: numberOfRays }, (_, i) => {
-            let angle = initialAngle + i * angleStep;
-            return this.castRay(angle);
-        });
+        return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
     getVCollision(angle) {
@@ -142,17 +158,21 @@ class view {
                     vertical: true,
                 }
             }
-            wall = map[cellY][cellX];
+            wall = this.map[cellY][cellX];
             if (!wall) {
                 nextX += xA;
                 nextY += yA;
             } else {
             }
         }
+        let Distance =distance(player.x, player.y, nextX, nextY)
         return {
             angle,
-            distance: distance(player.x, player.y, nextX, nextY),
+            distance: Distance,
             vertical: true,
+            block : wall,
+            horizontalSample : (right) ? Math.abs(nextY) - Math.abs(Math.floor(nextY)) : 1- (Math.abs(nextY) - Math.abs(Math.floor(nextY))), // up? checks for img rotation, need to rotate image when facing downwards
+            hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.sin)
         };
     }
 
@@ -183,16 +203,20 @@ class view {
                 }
             }
 
-            wall = map[cellY][cellX];
+            wall = (this.map)[cellY][cellX];
             if (!wall) {
                 nextX += xA;
                 nextY += yA;
             }
         }
+        let Distance =distance(player.x, player.y, nextX, nextY)
         return {
             angle,
-            distance: distance(player.x, player.y, nextX, nextY),
+            distance: Distance,
             vertical: false,
+            block : wall,
+            horizontalSample : (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1- (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
+            hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.cos)
         };
     }
 
@@ -200,7 +224,23 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        this.renderMinimap(0, 0, 0.75, rays);
+        this.renderMinimap( rays);
+    }
+
+    getRays() {
+        let initialAngle = player.angle - FOV / 2;
+        let angleStep = FOV / this.numberOfRays;
+        return Array.from({ length: this.numberOfRays }, (_, i) => {
+            let angle = initialAngle + i * angleStep;
+            return this.castRay(angle);
+        });
+    }
+
+    calcImageSampleWidth(distance, angle, func) {
+        let angleStep = FOV / this.numberOfRays
+
+        return Math.abs(distance/CELL_SIZE * (func(angle) - func(angle + angleStep)))
+
     }
 }
 
@@ -217,3 +257,45 @@ function fixFishEye(distance, angle, playerAngle) {
     return distance * Math.cos(diff);
 }
 
+function getImage(block){
+    if(imageSet[block.imageName]){
+        return imageSet[block.imageName]
+    }
+    try {
+        let loadIMG = new Image()
+        loadIMG.src = block.imageName
+        imageSet[block.imageName] = (isImageOk(loadIMG)) ? loadIMG : imageSet[missingImgName] ;
+        return loadIMG
+    }
+    catch (e){
+        imageSet[block.imageName] = imageSet[missingImgName];
+        return  imageSet[missingImgName]
+    }
+}
+
+function initMissingIMG(){
+    let loadIMG = new Image()
+    loadIMG.src = missingImgName
+    if(!loadIMG) console.log("error loading missing image placeholder")
+    imageSet[missingImgName] = loadIMG
+}
+
+function isImageOk(img) {
+    //https://stackoverflow.com/questions/1977871/check-if-an-image-is-loaded-no-errors-with-jquery
+    // During the onload event, IE correctly identifies any images that
+    // weren’t downloaded as not complete. Others should too. Gecko-based
+    // browsers act like NS4 in that they report this incorrectly.
+    if (!img.complete) {
+        return false;
+    }
+
+    // However, they do have two very useful properties: naturalWidth and
+    // naturalHeight. These give the true size of the image. If it failed
+    // to load, either of these should be zero.
+    if (img.naturalWidth === 0) {
+        return false;
+    }
+
+    // No other way of checking: assume it’s ok.
+    return true;
+}
