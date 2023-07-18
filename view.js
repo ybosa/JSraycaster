@@ -128,10 +128,11 @@ class view {
     }
 
     castRay(angle) {
-        let vCollision = this.getVCollision(angle);
-        let hCollision = this.getHCollision(angle);
-
-        return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
+        return  this.getCollision(angle); //finds ray collisions with blocks
+        // let vCollision = this.getVCollision(angle);
+        // let hCollision = this.getHCollision(angle);
+        //
+        // return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
     getVCollision(angle) {
@@ -222,6 +223,67 @@ class view {
             horizontalSample : (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1- (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
             hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.cos)
         };
+    }
+
+    getCollision(angle){
+        let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2); //facing right
+        let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
+
+        const deltaDistX= Math.abs(CELL_SIZE/ Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
+        const deltaDistY= Math.abs(CELL_SIZE/ Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
+
+        let sideDistX = (right) ? (Math.floor(player.x) + CELL_SIZE - player.x) / Math.cos(angle) : (Math.floor(player.x) - player.x) / Math.cos(angle)//distance to the next vertical wall
+        sideDistX = Math.abs(sideDistX)
+        let sideDistY = (up) ? (Math.floor(player.y) + CELL_SIZE - player.y) / Math.sin(angle) : (Math.floor(player.y) - player.y) / Math.sin(angle)   //distance to the next horizontal wall
+        sideDistY = Math.abs(sideDistY)
+        let mapX = Math.floor(player.x / CELL_SIZE) //grid cell player is in x coord
+        let mapY = Math.floor(player.y / CELL_SIZE) //grid cell player is in y coord
+
+        //step forward rays
+
+        let distance = 0;
+        let count = 0
+        while (count <= MAX_RAY_DEPTH){
+            count ++;
+            let vertical = sideDistX < sideDistY;
+            //jump to next map square, either in x-direction, or in y-direction
+            if(vertical){ //vertical wall is closer
+                distance = sideDistX;
+                sideDistX += deltaDistX;
+                mapX += (right) ? 1 : -1;
+            }
+            else{ //horizontal wall is closer
+                distance = sideDistY;
+                sideDistY += deltaDistY;
+                mapY += (up) ? 1 : -1;
+            }
+            //check if out of bounds
+            if(world.outOfMapBounds(mapX,mapY)) {
+                return {
+                    angle,
+                    distance: Infinity,
+                    vertical: vertical,
+                    horizontalSample : 0,
+                    hSampleWidth : 0
+                };
+            }
+            //Check if ray has hit a wall
+            else if( this.map[mapY][mapX] ){
+                return {
+                    angle,
+                    distance: distance,
+                    vertical: vertical,
+                    block : this.map[mapY][mapX],
+                    horizontalSample : (vertical) ? this.calcSample(vertical,distance,angle,mapY) : this.calcSample(vertical,distance,angle,mapX),
+                    hSampleWidth : this.calcImageSampleWidth(distance, angle,Math.cos)
+                };
+            }
+        }
+    }
+
+
+    calcSample(vertical, distance, angle, mapQ){
+        return (vertical) ? (distance * Math.sin(angle) + player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + player.x) / CELL_SIZE - mapQ
     }
 
     redraw(){

@@ -7,3 +7,4 @@ const MAX_RAYS = -1;// maximum number of rays (-1 for disable)
 
 const DEBUG_MODE = true
 const IMAGE_PATH = "./images/"
+const MAX_RAY_DEPTH = 10000 //max number of blocks ray can travel
