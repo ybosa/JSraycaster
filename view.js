@@ -12,11 +12,10 @@ let missingIMGSet= new Set();
 let missingImgName = "missing.png"
 initMissingIMG()
 
-
 class view {
 
-    SCREEN_WIDTH = window.innerWidth;
-    SCREEN_HEIGHT = window.innerHeight;
+    SCREEN_WIDTH = Math.floor(window.innerWidth /2) *2;
+    SCREEN_HEIGHT = Math.floor( window.innerHeight /2) *2;
     numberOfRays;
     canvas;
     context;
