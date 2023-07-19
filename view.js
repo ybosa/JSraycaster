@@ -8,14 +8,14 @@ let COLORS = {
 let FOV = toRadians(75);
 
 let imageSet = new Set();
-let missingIMGSet= new Set();
+let missingIMGSet = new Set();
 let missingImgName = "missing.png"
 initMissingIMG()
 
 class view {
 
-    SCREEN_WIDTH = Math.floor(window.innerWidth /2) *2;
-    SCREEN_HEIGHT = Math.floor( window.innerHeight /2) *2;
+    SCREEN_WIDTH = Math.floor(window.innerWidth / 2) * 2;
+    SCREEN_HEIGHT = Math.floor(window.innerHeight / 2) * 2;
     numberOfRays;
     canvas;
     context;
@@ -24,7 +24,7 @@ class view {
     world;
     map;
 
-    constructor(player,Canvas = document.createElement("canvas")) {
+    constructor(player, Canvas = document.createElement("canvas")) {
         this.canvas = Canvas;
         this.canvas.setAttribute("width", this.SCREEN_WIDTH);
         this.canvas.setAttribute("height", this.SCREEN_HEIGHT);
@@ -36,7 +36,7 @@ class view {
         this.world = player.world;
         this.map = this.world.map;
 
-        if(MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
+        if (MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
         else this.numberOfRays = MAX_RAYS
 
 
@@ -44,20 +44,20 @@ class view {
 
     clearScreen() {
         this.context.fillStyle = COLORS.floor;
-        this.context.fillRect(0, this.SCREEN_HEIGHT/2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT/2);
+        this.context.fillRect(0, this.SCREEN_HEIGHT / 2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT / 2);
         this.context.fillStyle = COLORS.ceiling;
-        this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT/2);
+        this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT / 2);
     }
 
     renderMinimap(rays) {
         let posX = 0, posY = 0;
-        let screenPortion = 1/4 //portion of screen covered
-        let scale = this.SCREEN_WIDTH/ (this.map.length * CELL_SIZE)  * screenPortion  //[px/m] meters to pixels
-        let cellSize = scale * CELL_SIZE ; //[px] pixels each cell takes up
+        let screenPortion = 1 / 4 //portion of screen covered
+        let scale = this.SCREEN_WIDTH / (this.map.length * CELL_SIZE) * screenPortion  //[px/m] meters to pixels
+        let cellSize = scale * CELL_SIZE; //[px] pixels each cell takes up
         this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if (cell) {
-                    this.context.drawImage(getImage(cell.imageName),posX + x * cellSize,posY + y * cellSize,cellSize,cellSize)
+                    this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
                 }
             });
         });
@@ -97,37 +97,65 @@ class view {
 
         //render rays
         rays.forEach((ray, i) => {
-            if(!ray.block) return;
-            let distance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
-            let wallHeight = ((CELL_SIZE * 5) / distance) * 277; //[px]height of wall
-            let pixelWidth = this.SCREEN_WIDTH/ this.numberOfRays //[px]width of each ray in px
-            let img = getImage(ray.block.imageName)
+            let previousBlock = ray.blocks[ray.blocks.length - 1]
+            for (let j = ray.blocks.length - 1; j >= 0; j--) {
+                const useful = ray.blocks[j]
+                const block = useful.block
+                //ignore out of bounds or invisible blocks
+                if (block.invisible || block === ABYSS) continue
+                //draw floors
+                if (block.floor || block.ceiling) {
+                    let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
+                    let wallHeight = this.SCREEN_HEIGHT / distWall //[px]height of wall
+                    let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+                    // calc floor/ceiling screen height based on wall height
+                    let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
+                    if(drawStart > this.SCREEN_HEIGHT) return
+                    let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
+                    if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
-            //process image sampling
-            let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width))
-            let sampleImageHorizontalWidth = Math.abs(Math.floor(ray.hSampleWidth*img.width))
-            sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth /2)
-            if(sampleImageHorizontalWidth <=1 ) {
-                sampleImageHorizontalWidth = 1
+                    //draw from top of tile to bottom of tile
+                    if(DEBUG_MODE) {
+                        this.context.strokeStyle = 'red';
+                        this.context.strokeRect(i * pixelWidth, drawStart + 1, pixelWidth + 1, 1);
+                    }
+                    previousBlock =useful
+                } else
+                    this.drawWall(ray, i, block)
             }
-            else if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
-            else if(sampleImageHorizontal <= 0) sampleImageHorizontal =0
-            //
 
-            this.context.drawImage(img,sampleImageHorizontal,
-                0,sampleImageHorizontalWidth, img.height,
-                i* pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth+1, wallHeight)
-
-            if(DEBUG_MODE && pixelWidth > 5) {
-                this.context.strokeStyle = 'red';
-                this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 4, pixelWidth + 1, wallHeight/4);
-            }
         });
-    //    https://www.youtube.com/watch?v=8RDBa3dkl0g
+        //    https://www.youtube.com/watch?v=8RDBa3dkl0g
+    }
+
+    drawWall(ray, i, block) {
+        let perpDistance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
+        let wallHeight = this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+        let img = getImage(block.imageName)
+
+        //process image sampling
+        let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width)) //FIXME CALC SAMPLING HERE OR BY BLOCK STORED NOT JUST FINAL BLOCK
+        let sampleImageHorizontalWidth = Math.abs(Math.floor(ray.hSampleWidth * img.width))
+        sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth / 2)
+        if (sampleImageHorizontalWidth <= 1) {
+            sampleImageHorizontalWidth = 1
+        } else if (sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
+        else if (sampleImageHorizontal <= 0) sampleImageHorizontal = 0
+        //
+
+        this.context.drawImage(img, sampleImageHorizontal,
+            0, sampleImageHorizontalWidth, img.height,
+            i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth + 1, wallHeight)
+
+        if (DEBUG_MODE && pixelWidth > 5) {
+            this.context.strokeStyle = 'red';
+            this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth + 1, wallHeight);
+        }
     }
 
     castRay(angle) {
-        return  this.getCollision(angle); //finds ray collisions with blocks
+        return this.getCollision(angle); //finds ray collisions with blocks
         // let vCollision = this.getVCollision(angle);
         // let hCollision = this.getHCollision(angle);
         //
@@ -158,7 +186,7 @@ class view {
             if (world.outOfMapBounds(cellX, cellY)) {
                 return {
                     angle,
-                    distance: distance(player.x, player.y,Infinity , Infinity),
+                    distance: distance(player.x, player.y, Infinity, Infinity),
                     vertical: true,
                 }
             }
@@ -169,14 +197,14 @@ class view {
             } else {
             }
         }
-        let Distance =distance(player.x, player.y, nextX, nextY)
+        let Distance = distance(player.x, player.y, nextX, nextY)
         return {
             angle,
             distance: Distance,
             vertical: true,
-            block : wall,
-            horizontalSample : (right) ? Math.abs(nextY) - Math.abs(Math.floor(nextY)) : 1- (Math.abs(nextY) - Math.abs(Math.floor(nextY))), // up? checks for img rotation, need to rotate image when facing downwards
-            hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.sin)
+            block: wall,
+            horizontalSample: (right) ? Math.abs(nextY) - Math.abs(Math.floor(nextY)) : 1 - (Math.abs(nextY) - Math.abs(Math.floor(nextY))), // up? checks for img rotation, need to rotate image when facing downwards
+            hSampleWidth: this.calcImageSampleWidth(Distance, angle, Math.sin)
         };
     }
 
@@ -202,7 +230,7 @@ class view {
             if (world.outOfMapBounds(cellX, cellY)) {
                 return {
                     angle,
-                    distance: distance(player.x, player.y,Infinity , Infinity),
+                    distance: distance(player.x, player.y, Infinity, Infinity),
                     vertical: true,
                 }
             }
@@ -213,23 +241,23 @@ class view {
                 nextY += yA;
             }
         }
-        let Distance =distance(player.x, player.y, nextX, nextY)
+        let Distance = distance(player.x, player.y, nextX, nextY)
         return {
             angle,
             distance: Distance,
             vertical: false,
-            block : wall,
-            horizontalSample : (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1- (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
-            hSampleWidth : this.calcImageSampleWidth(Distance, angle,Math.cos)
+            block: wall,
+            horizontalSample: (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1 - (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
+            hSampleWidth: this.calcImageSampleWidth(Distance, angle, Math.cos)
         };
     }
 
-    getCollision(angle){
+    getCollision(angle) {
         let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
 
-        const deltaDistX= Math.abs(CELL_SIZE/ Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
-        const deltaDistY= Math.abs(CELL_SIZE/ Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
+        const deltaDistX = Math.abs(CELL_SIZE / Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
+        const deltaDistY = Math.abs(CELL_SIZE / Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
 
         let sideDistX = (right) ? (Math.floor(player.x) + CELL_SIZE - player.x) / Math.cos(angle) : (Math.floor(player.x) - player.x) / Math.cos(angle)//distance to the next vertical wall
         sideDistX = Math.abs(sideDistX)
@@ -242,61 +270,71 @@ class view {
 
         let distance = 0;
         let count = 0
-        while (count <= MAX_RAY_DEPTH){
-            count ++;
+        let blocks = [] //set of all the blocks visited by the ray
+
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance)
+        while (count <= MAX_RAY_DEPTH) {
+            count++;
             let vertical = sideDistX < sideDistY;
             //jump to next map square, either in x-direction, or in y-direction
-            if(vertical){ //vertical wall is closer
+            if (vertical) { //vertical wall is closer
                 distance = sideDistX;
                 sideDistX += deltaDistX;
                 mapX += (right) ? 1 : -1;
-            }
-            else{ //horizontal wall is closer
+            } else { //horizontal wall is closer
                 distance = sideDistY;
                 sideDistY += deltaDistY;
                 mapY += (up) ? 1 : -1;
             }
             //check if out of bounds
-            if(world.outOfMapBounds(mapX,mapY)) {
-                return {
-                    angle,
-                    distance: Infinity,
-                    vertical: vertical,
-                    horizontalSample : 0,
-                    hSampleWidth : 0
-                };
-            }
-            //Check if ray has hit a wall
-            else if( this.map[mapY][mapX] ){
+            if (world.outOfMapBounds(mapX, mapY)) {
+                let block = ABYSS
+                blocks.push({block, distance})
                 return {
                     angle,
                     distance: distance,
                     vertical: vertical,
-                    block : this.map[mapY][mapX],
-                    horizontalSample : (vertical) ? this.calcSample(vertical,distance,angle,mapY) : this.calcSample(vertical,distance,angle,mapX),
-                    hSampleWidth : this.calcImageSampleWidth(distance, angle,Math.cos)
+                    horizontalSample: 0,
+                    hSampleWidth: 0,
+                    blocks: blocks
+                };
+            }
+            //Not out of bounds so add current block to array (ignore invisible blocks
+            if (!this.map[mapY][mapX].invisible) {
+                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance)
+            }
+            //Check if ray has hit a wall, end raycast.
+            if (!this.map[mapY][mapX].transparent) {
+                return {
+                    angle,
+                    distance: distance,
+                    vertical: vertical,
+                    block: this.map[mapY][mapX],
+                    horizontalSample: (vertical) ? this.calcSample(vertical, distance, angle, mapY) : this.calcSample(vertical, distance, angle, mapX),
+                    hSampleWidth: this.calcImageSampleWidth(distance, angle, Math.cos),
+                    blocks: blocks
                 };
             }
         }
     }
 
 
-    calcSample(vertical, distance, angle, mapQ){
+    calcSample(vertical, distance, angle, mapQ) {
         return (vertical) ? (distance * Math.sin(angle) + player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + player.x) / CELL_SIZE - mapQ
     }
 
-    redraw(){
+    redraw() {
         loadImages()
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        this.renderMinimap( rays);
+        this.renderMinimap(rays);
     }
 
     getRays() {
         let initialAngle = player.angle - FOV / 2;
         let angleStep = FOV / this.numberOfRays;
-        return Array.from({ length: this.numberOfRays }, (_, i) => {
+        return Array.from({length: this.numberOfRays}, (_, i) => {
             let angle = initialAngle + i * angleStep;
             return this.castRay(angle);
         });
@@ -305,27 +343,27 @@ class view {
     calcImageSampleWidth(distance, angle, func) {
         let angleStep = FOV / this.numberOfRays
 
-        return Math.abs(distance/CELL_SIZE * (func(angle) - func(angle + angleStep)))
+        return Math.abs(distance / CELL_SIZE * (func(angle) - func(angle + angleStep)))
 
     }
 
-    drawSkybox(img){
-        let rotation = player.angle / (2* Math.PI) - Math.floor(player.angle / (2* Math.PI)) //btw 0 and 1
+    drawSkybox(img) {
+        let rotation = player.angle / (2 * Math.PI) - Math.floor(player.angle / (2 * Math.PI)) //btw 0 and 1
 
         let sXStart = rotation * img.width //[px]
         let sXWidth = FOV / (2 * Math.PI) * img.width          //[px]
-        this.context.drawImage(img,sXStart,0,sXWidth,img.height,0,0,this.SCREEN_WIDTH, this.SCREEN_HEIGHT)
+        this.context.drawImage(img, sXStart, 0, sXWidth, img.height, 0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT)
 
         //reached right end of image
-        if(sXStart + sXWidth > img.width){
+        if (sXStart + sXWidth > img.width) {
             let sXWDrawn = (img.width - sXStart)
             let sXWRemain = sXWidth - sXWDrawn
 
-            let scale = this.SCREEN_WIDTH/sXWidth
-            let ScreenPosX= scale * sXWDrawn
+            let scale = this.SCREEN_WIDTH / sXWidth
+            let ScreenPosX = scale * sXWDrawn
             let ScreenRemainingX = scale * sXWRemain
 
-            this.context.drawImage(img,0,0,sXWRemain,img.height,ScreenPosX,0,ScreenRemainingX, this.SCREEN_HEIGHT)
+            this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX, 0, ScreenRemainingX, this.SCREEN_HEIGHT)
         }
     }
 }
@@ -343,35 +381,33 @@ function fixFishEye(distance, angle, playerAngle) {
     return distance * Math.cos(diff);
 }
 
-function getImage(imageName){
-    if(imageSet[imageName]){
+function getImage(imageName) {
+    if (imageSet[imageName]) {
         return imageSet[imageName]
-    }
-    else {
+    } else {
         missingIMGSet.add(imageName)
         return imageSet[missingImgName]
     }
 }
 
-function loadImages(){
+function loadImages() {
     let removeSet = new Set()
-    missingIMGSet.forEach(image =>{
-        if(imageSet[image] && imageSet[image] !== imageSet[missingImgName]){
+    missingIMGSet.forEach(image => {
+        if (imageSet[image] && imageSet[image] !== imageSet[missingImgName]) {
             removeSet.add(image)
             return;
         }
-        if(DEBUG_MODE) console.log("loading img: " + image)
+        if (DEBUG_MODE) console.log("loading img: " + image)
         let loadIMG = new Image()
-        loadIMG.src = IMAGE_PATH+image
-        if(!loadIMG && DEBUG_MODE){
+        loadIMG.src = IMAGE_PATH + image
+        if (!loadIMG && DEBUG_MODE) {
             console.log("error loading image: " + image)
         }
 
-        if(!loadIMG){
+        if (!loadIMG) {
             imageSet[image] = imageSet[missingImgName]
             removeSet.add(image)
-        }
-        else {
+        } else {
             imageSet[image] = loadIMG
             removeSet.add(image)
         }
@@ -380,29 +416,13 @@ function loadImages(){
     removeSet.forEach(image => missingIMGSet.delete(image))
 }
 
-function initMissingIMG(){
+function initMissingIMG() {
     let loadIMG = new Image()
-    loadIMG.src = IMAGE_PATH+missingImgName
-    if(!loadIMG) console.log("error loading missing image placeholder")
+    loadIMG.src = IMAGE_PATH + missingImgName
+    if (!loadIMG) console.log("error loading missing image placeholder")
     imageSet[missingImgName] = loadIMG
 }
 
-function isImageOk(img) {
-    //https://stackoverflow.com/questions/1977871/check-if-an-image-is-loaded-no-errors-with-jquery
-    // During the onload event, IE correctly identifies any images that
-    // weren’t downloaded as not complete. Others should too. Gecko-based
-    // browsers act like NS4 in that they report this incorrectly.
-    if (!img.complete) {
-        return false;
-    }
-
-    // However, they do have two very useful properties: naturalWidth and
-    // naturalHeight. These give the true size of the image. If it failed
-    // to load, either of these should be zero.
-    if (img.naturalWidth === 0) {
-        return false;
-    }
-
-    // No other way of checking: assume it’s ok.
-    return true;
+function pushBlocks(blocks,block, mapX, mapY, distance){
+    blocks.push({block, mapX, mapY, distance})
 }

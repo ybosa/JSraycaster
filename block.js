@@ -8,8 +8,11 @@ class Block{
 }
 
 class Floor extends Block{
+    floor = true;
     static = true;
-    floorImageName = "floor.png";
+    imageName = "floor.png";
     passable = true;
     transparent = true;
 }
+
+const ABYSS = new Block()
