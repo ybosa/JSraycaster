@@ -8,6 +8,7 @@ let COLORS = {
 let FOV = toRadians(75);
 
 let imageSet = new Set();
+let imageDataBufferSet = new Set();
 let missingIMGSet = new Set();
 let missingImgName = "missing.png"
 initMissingIMG()
@@ -60,6 +61,16 @@ class view {
         this.context.fillRect(0, this.SCREEN_HEIGHT / 2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT / 2);
         this.context.fillStyle = COLORS.ceiling;
         this.context.fillRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT / 2);
+
+        for (let y = 0; y < this.SCREEN_HEIGHT; y++) {
+            for (let x = 0; x < this.SCREEN_WIDTH; x++) {
+                const i = (y*this.SCREEN_WIDTH + x) * 4;
+                this.pixelArray[i  ] = 255;   // red
+                this.pixelArray[i+1] = 255;   // green
+                this.pixelArray[i+2] = 255;   // blue
+                this.pixelArray[i+3] = 255; // alpha
+            }
+        }
     }
 
     renderMinimap(rays) {
@@ -193,16 +204,19 @@ class view {
     }
 
     sampleFloorImage(pixelWidth,pixelHeight,screenOffsetY,ScreenOffsetX,ray,useful){
-
-        //setup image
+        //retrieve image buffer from cache
+        const data =getImageDataBuffer(useful.block.imageName)
+        // //setup image
         let img = getImage(useful.block.imageName)
-        // var canvas = document.createElement('canvas');
-        // var ctxt = canvas.getContext('2d');
-        // canvas.width = img.width;
-        // canvas.height = img.height;
-        this.hiddenCanvasContext.drawImage(img, 0, 0 );
-        var IMGDATA = this.hiddenCanvasContext.getImageData(0, 0, img.width, img.height);
 
+        //compute image buffer, now cached
+        // // var canvas = document.createElement('canvas');
+        // // var ctxt = canvas.getContext('2d');
+        // // canvas.width = img.width;
+        // // canvas.height = img.height;
+        // this.hiddenCanvasContext.drawImage(img, 0, 0 );
+        // var IMGDATA = this.hiddenCanvasContext.getImageData(0, 0, img.width, img.height);
+        // let data = IMGDATA.data
         //sample image into buffer
         // const arrayBuffer = new ArrayBuffer(pixelWidth * pixelHeight * 4);
         // const pixels = new Uint8ClampedArray(arrayBuffer);
@@ -219,16 +233,20 @@ class view {
                     x*xscale + y *yscale * img.width
                 ) * 4
 
-                const i = (x + ScreenOffsetX + (screenOffsetY+y) * this.SCREEN_WIDTH) * 4;
 
+                const i = (x + ScreenOffsetX + (screenOffsetY+y) * this.SCREEN_WIDTH) * 4;
+                //don't overdraw and wrap around to the other side
+                if(x+ScreenOffsetX >= this.SCREEN_WIDTH){
+                    break
+                }
                 //fix rounding error causing out of bounds pixels
                 if(j >=img.width*img.height *4) {
                     j = img.width * img.height *4 - 4
                 }
-                this.pixelArray[i  ] = IMGDATA.data[j];   // red
-                this.pixelArray[i+1] = IMGDATA.data[j+1];   // green
-                this.pixelArray[i+2] = IMGDATA.data[j+2];   // blue
-                this.pixelArray[i+3] = IMGDATA.data[j+3]//255; // alpha
+                this.pixelArray[i  ] = data[j];   // red
+                this.pixelArray[i+1] = data[j+1];   // green
+                this.pixelArray[i+2] = data[j+2];   // blue
+                this.pixelArray[i+3] = data[j+3]//255; // alpha
             }
         }
         //return image
@@ -431,7 +449,7 @@ class view {
     }
 
     redraw() {
-        loadImages()
+        this.loadImages()
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
@@ -473,6 +491,45 @@ class view {
             this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX, 0, ScreenRemainingX, this.SCREEN_HEIGHT)
         }
     }
+
+    loadImages() {
+        let removeSet = new Set()
+        missingIMGSet.forEach(image => {
+            if (imageSet[image] && imageSet[image] !== imageSet[missingImgName] && imageDataBufferSet[image] && imageDataBufferSet[image] !== imageDataBufferSet[missingImgName]) {
+                removeSet.add(image)
+                return;
+            }
+            if (DEBUG_MODE) console.log("loading img: " + image)
+            let loadIMG = new Image()
+            loadIMG.src = IMAGE_PATH + image
+            if (!loadIMG && DEBUG_MODE) {
+                console.log("error loading image: " + image)
+            }
+
+            if (!loadIMG) {
+                imageSet[image] = imageSet[missingImgName]
+                removeSet.add(image)
+                loadIMG = imageSet[missingImgName]
+            } else {
+                imageSet[image] = loadIMG
+                removeSet.add(image)
+            }
+            if(!loadIMG || loadIMG.width === 0 || loadIMG.height ===0){
+                console.log(image)
+            }
+
+            //load image buffer
+            this.hiddenCanvasContext.drawImage(loadIMG, 0, 0 );
+            let imageData = this.hiddenCanvasContext.getImageData(0, 0, loadIMG.width, loadIMG.height);
+
+            let data = new Uint8ClampedArray(new ArrayBuffer(loadIMG.width * loadIMG.height * 4));
+            data.set(imageData.data)
+
+            imageDataBufferSet[image] = data
+        })
+
+        removeSet.forEach(image => missingIMGSet.delete(image))
+    }
 }
 
 function toRadians(deg) {
@@ -497,37 +554,35 @@ function getImage(imageName) {
     }
 }
 
-function loadImages() {
-    let removeSet = new Set()
-    missingIMGSet.forEach(image => {
-        if (imageSet[image] && imageSet[image] !== imageSet[missingImgName]) {
-            removeSet.add(image)
-            return;
-        }
-        if (DEBUG_MODE) console.log("loading img: " + image)
-        let loadIMG = new Image()
-        loadIMG.src = IMAGE_PATH + image
-        if (!loadIMG && DEBUG_MODE) {
-            console.log("error loading image: " + image)
-        }
-
-        if (!loadIMG) {
-            imageSet[image] = imageSet[missingImgName]
-            removeSet.add(image)
-        } else {
-            imageSet[image] = loadIMG
-            removeSet.add(image)
-        }
-    })
-
-    removeSet.forEach(image => missingIMGSet.delete(image))
+function getImageDataBuffer(imageName) {
+    if (imageDataBufferSet[imageName]) {
+        return imageDataBufferSet[imageName]
+    } else {
+        missingIMGSet.add(imageName)
+        return imageDataBufferSet[missingImgName]
+    }
 }
 
 function initMissingIMG() {
+    //load image
     let loadIMG = new Image()
     loadIMG.src = IMAGE_PATH + missingImgName
     if (!loadIMG) console.log("error loading missing image placeholder")
     imageSet[missingImgName] = loadIMG
+
+    let data = new Uint8ClampedArray(new ArrayBuffer(loadIMG.width * loadIMG.height * 4));
+    //create missing image
+    for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+            const i = (y*8 + x) * 4;
+            data[i  ] = (i/4 %2 === 0) ? 255 : 0;   // red
+            data[i+1] = 0;   // green
+            data[i+2] = (i/4 %2 === 0) ? 255 : 0;   // blue
+            data[i+3] = 255; // alpha
+        }
+    }
+
+    imageDataBufferSet[missingImgName] = data
 }
 
 function pushBlocks(blocks,block, mapX, mapY, distance){
