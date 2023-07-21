@@ -112,10 +112,13 @@ class view {
                     let wallHeight = this.SCREEN_HEIGHT / distWall //[px]height of wall
                     let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
                     // calc floor/ceiling screen height based on wall height
+                    pixelWidth = roundUpToInt(pixelWidth)
                     let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
+                    drawStart = Math.floor(drawStart)
                     if(drawStart > this.SCREEN_HEIGHT) return
                     let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
+                    else drawEnd = roundUpToInt(drawEnd)
 
                     if(drawEnd - drawStart < 2){
                         if(!skipDraw){
@@ -125,7 +128,7 @@ class view {
                         // this.context.strokeStyle = 'red';
                         // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                     }
-                    else if(drawEnd - drawStart < 5){
+                    else if(drawEnd - drawStart < 10){
                         drawStart = (skipDraw) ? skipDrawLine : drawStart
                         skipDraw = false
                         this.context.strokeStyle = 'blue';
@@ -134,10 +137,13 @@ class view {
                     else {
                         drawStart = (skipDraw) ? skipDrawLine : drawStart
                         skipDraw = false
-                        let img = getImage(block.imageName)
-                        this.context.drawImage(img, 0,
-                            0, img.width, img.height,
-                            i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart)
+                        // let img = getImage(block.imageName)
+                        // this.context.drawImage(img, 0,
+                        //     0, img.width, img.height,
+                        //     i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart)
+
+                        let imageData = this.sampleFloorImage(pixelWidth+1,drawEnd - drawStart,ray,useful)
+                        this.context.putImageData(imageData,i*pixelWidth,drawStart)
                     }
 
 
@@ -171,6 +177,52 @@ class view {
 
         });
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
+
+
+    }
+
+    sampleFloorImage(pixelWidth,pixelHeight,ray,useful){
+
+        //setup image
+        let img = getImage(useful.block.imageName)
+        var canvas = document.createElement('canvas');
+        var ctxt = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctxt.drawImage(img, 0, 0 );
+        var IMGDATA = ctxt.getImageData(0, 0, img.width, img.height);
+
+        //sample image into buffer
+        const arrayBuffer = new ArrayBuffer(pixelWidth * pixelHeight * 4);
+        const pixels = new Uint8ClampedArray(arrayBuffer);
+
+        //strange undrawn steps caused by rounding err
+        // const yscale = Math.floor(img.height*10/pixelHeight)/10
+        const yscale = img.height/pixelHeight
+        // const xscale = Math.floor(img.width*10/pixelWidth)/10
+        const xscale = img.width/pixelWidth
+        // console.log("ih " + img.height + " ph " + pixelHeight + " ys "+yscale)
+        let count = 0
+        for (let y = 0; y < pixelHeight; y++) {
+            for (let x = 0; x < pixelWidth; x++) {
+
+
+                const i = (y*pixelWidth + x) * 4;
+                let j = Math.floor(
+                    x*xscale + y *yscale * img.width
+                ) * 4
+                //fix rounding error causing out of bounds pixels
+                if(j >=img.width*img.height *4) {
+                    j = img.width * img.height *4 - 4
+                }
+                pixels[i  ] = IMGDATA.data[j];   // red
+                pixels[i+1] = IMGDATA.data[j+1];   // green
+                pixels[i+2] = IMGDATA.data[j+2];   // blue
+                pixels[i+3] = IMGDATA.data[j+3]//255; // alpha
+            }
+        }
+        //return image
+        return  new ImageData(pixels, pixelWidth, pixelHeight);
     }
 
     drawWall(ray, i, block) {
@@ -373,7 +425,7 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        this.renderMinimap(rays);
+        // this.renderMinimap(rays);
     }
 
     getRays() {
@@ -470,4 +522,8 @@ function initMissingIMG() {
 
 function pushBlocks(blocks,block, mapX, mapY, distance){
     blocks.push({block, mapX, mapY, distance})
+}
+
+function roundUpToInt(i){
+    return (Math.floor(i) === i)? i : Math.floor(i) + 1
 }
