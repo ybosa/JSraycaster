@@ -24,6 +24,12 @@ class view {
     world;
     map;
 
+    //used do directly draw pixels onto the screen (not ideal)
+    pixelArrayBuffer;
+    pixelArray;
+    hiddenCanvas;
+    hiddenCanvasContext;
+
     constructor(player, Canvas = document.createElement("canvas")) {
         this.canvas = Canvas;
         this.canvas.setAttribute("width", this.SCREEN_WIDTH);
@@ -39,7 +45,14 @@ class view {
         if (MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
         else this.numberOfRays = MAX_RAYS
 
+        //CREATE PIXEL BUFFER for direct pixel to canvas drawing
+        this.hiddenCanvas = document.createElement('canvas');
+        this.hiddenCanvasContext = this.hiddenCanvas.getContext('2d');
+        this.hiddenCanvas.width=this.SCREEN_WIDTH;
+        this.hiddenCanvas.height=this.SCREEN_HEIGHT;
 
+        this.pixelArrayBuffer =new ArrayBuffer(this.SCREEN_WIDTH * this.SCREEN_HEIGHT * 4);
+        this.pixelArray = new Uint8ClampedArray(this.pixelArrayBuffer);
     }
 
     clearScreen() {
@@ -142,8 +155,7 @@ class view {
                         //     0, img.width, img.height,
                         //     i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart)
 
-                        let imageData = this.sampleFloorImage(pixelWidth+1,drawEnd - drawStart,ray,useful)
-                        this.context.putImageData(imageData,i*pixelWidth,drawStart)
+                        this.sampleFloorImage(pixelWidth,drawEnd - drawStart,drawStart,i*pixelWidth,ray,useful)
                     }
 
 
@@ -174,27 +186,26 @@ class view {
                 } else
                     this.drawWall(ray, i, block)
             }
-
         });
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
 
-
+        this.context.putImageData(new ImageData(this.pixelArray,this.SCREEN_WIDTH,this.SCREEN_HEIGHT),0,0)
     }
 
-    sampleFloorImage(pixelWidth,pixelHeight,ray,useful){
+    sampleFloorImage(pixelWidth,pixelHeight,screenOffsetY,ScreenOffsetX,ray,useful){
 
         //setup image
         let img = getImage(useful.block.imageName)
-        var canvas = document.createElement('canvas');
-        var ctxt = canvas.getContext('2d');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctxt.drawImage(img, 0, 0 );
-        var IMGDATA = ctxt.getImageData(0, 0, img.width, img.height);
+        // var canvas = document.createElement('canvas');
+        // var ctxt = canvas.getContext('2d');
+        // canvas.width = img.width;
+        // canvas.height = img.height;
+        this.hiddenCanvasContext.drawImage(img, 0, 0 );
+        var IMGDATA = this.hiddenCanvasContext.getImageData(0, 0, img.width, img.height);
 
         //sample image into buffer
-        const arrayBuffer = new ArrayBuffer(pixelWidth * pixelHeight * 4);
-        const pixels = new Uint8ClampedArray(arrayBuffer);
+        // const arrayBuffer = new ArrayBuffer(pixelWidth * pixelHeight * 4);
+        // const pixels = new Uint8ClampedArray(arrayBuffer);
 
         //strange undrawn steps caused by rounding err
         // const yscale = Math.floor(img.height*10/pixelHeight)/10
@@ -202,27 +213,26 @@ class view {
         // const xscale = Math.floor(img.width*10/pixelWidth)/10
         const xscale = img.width/pixelWidth
         // console.log("ih " + img.height + " ph " + pixelHeight + " ys "+yscale)
-        let count = 0
         for (let y = 0; y < pixelHeight; y++) {
             for (let x = 0; x < pixelWidth; x++) {
-
-
-                const i = (y*pixelWidth + x) * 4;
                 let j = Math.floor(
                     x*xscale + y *yscale * img.width
                 ) * 4
+
+                const i = (x + ScreenOffsetX + (screenOffsetY+y) * this.SCREEN_WIDTH) * 4;
+
                 //fix rounding error causing out of bounds pixels
                 if(j >=img.width*img.height *4) {
                     j = img.width * img.height *4 - 4
                 }
-                pixels[i  ] = IMGDATA.data[j];   // red
-                pixels[i+1] = IMGDATA.data[j+1];   // green
-                pixels[i+2] = IMGDATA.data[j+2];   // blue
-                pixels[i+3] = IMGDATA.data[j+3]//255; // alpha
+                this.pixelArray[i  ] = IMGDATA.data[j];   // red
+                this.pixelArray[i+1] = IMGDATA.data[j+1];   // green
+                this.pixelArray[i+2] = IMGDATA.data[j+2];   // blue
+                this.pixelArray[i+3] = IMGDATA.data[j+3]//255; // alpha
             }
         }
         //return image
-        return  new ImageData(pixels, pixelWidth, pixelHeight);
+        // return  new ImageData(pixels, pixelWidth, pixelHeight);
     }
 
     drawWall(ray, i, block) {
