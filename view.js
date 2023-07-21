@@ -97,6 +97,9 @@ class view {
 
         //render rays
         rays.forEach((ray, i) => {
+            let skipDrawLine = this.SCREEN_HEIGHT/2
+            let skipDraw = false
+
             let previousBlock = ray.blocks[ray.blocks.length - 1]
             for (let j = ray.blocks.length - 1; j >= 0; j--) {
                 const useful = ray.blocks[j]
@@ -114,12 +117,54 @@ class view {
                     let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
-                    //draw from top of tile to bottom of tile
-                    if(DEBUG_MODE) {
-                        this.context.strokeStyle = 'red';
-                        this.context.strokeRect(i * pixelWidth, drawStart + 1, pixelWidth + 1, 1);
+                    if(drawEnd - drawStart < 2){
+                        if(!skipDraw){
+                            skipDrawLine =drawStart
+                            skipDraw = true
+                        }
+                        // this.context.strokeStyle = 'red';
+                        // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                     }
-                    previousBlock =useful
+                    else if(drawEnd - drawStart < 5){
+                        drawStart = (skipDraw) ? skipDrawLine : drawStart
+                        skipDraw = false
+                        this.context.strokeStyle = 'blue';
+                        this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                    }
+                    else {
+                        drawStart = (skipDraw) ? skipDrawLine : drawStart
+                        skipDraw = false
+                        let img = getImage(block.imageName)
+                        this.context.drawImage(img, 0,
+                            0, img.width, img.height,
+                            i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart)
+                    }
+
+
+                    //draw from top of tile to bottom of tile
+                    if (DEBUG_MODE) {
+                        if(drawEnd - drawStart < 2){
+                            if(!skipDraw){
+                                skipDrawLine =drawStart
+                                skipDraw = true
+                            }
+                            // this.context.strokeStyle = 'red';
+                            // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                        }
+                        else if(drawEnd - drawStart < 10){
+                            drawStart = (skipDraw) ? skipDrawLine : drawStart
+                            skipDraw = false
+                            this.context.strokeStyle = 'blue';
+                            this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                        }
+                        else {
+                            drawStart = (skipDraw) ? skipDrawLine : drawStart
+                            skipDraw = false
+                            this.context.strokeStyle = 'yellow';
+                            this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                        }
+                    }
+                    previousBlock = useful
                 } else
                     this.drawWall(ray, i, block)
             }
