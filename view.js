@@ -108,11 +108,13 @@ class view {
             let skipDrawFloor = false
             let skipDrawFloorCount =0
             let skipDrawFloorColour = 'red'
+            let skipDrawFloorType = false //currently drawing a ceiling or empty gap
             //ceiling drawing variables
             let skipDrawCeilingLine = 0
             let skipDrawCeiling = false
             let skipDrawCeilingCount =0
             let skipDrawCeilingColour = 'red'
+            let skipDrawCeilingType = false //currently, drawing a ceiling or empty gap
 
             let previousBlock = ray.blocks[ray.blocks.length - 1]
             for (let j = ray.blocks.length - 1; j >= 0; j--) {
@@ -135,8 +137,8 @@ class view {
 
 
                     //DRAW THE FLOOR BLOCK
-                    //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                    if(!skipDrawFloor && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                    //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
+                    if(!skipDrawFloor && j!==0 && ray.blocks[j-1].block.floor && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
                         skipDrawFloorLine =drawStart
                         skipDrawFloor = true
                         skipDrawFloorCount += drawDist;
@@ -144,8 +146,8 @@ class view {
                             skipDrawFloorColour = block.floorColour
 
                     }
-                    //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                    else if(skipDrawFloor && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                    //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
+                    else if(skipDrawFloor && j!==0 && ray.blocks[j-1].block.floor  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
                         skipDrawFloorCount += drawDist;
                     }
                     //end skipDraw
@@ -168,16 +170,16 @@ class view {
 
                     //DRAW THE CEILING BLOCK
                     //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                    if(!skipDrawCeiling && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                    if(!skipDrawCeiling && block.ceiling && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
                         skipDrawCeilingLine = this.SCREEN_HEIGHT - drawStart -drawDist
                         skipDrawCeiling = true
                         skipDrawCeilingCount += drawDist;
-                        if(block.ceiling)
-                            skipDrawCeilingColour = block.ceilingColour
+                        skipDrawCeilingColour = block.ceilingColour
+                        skipDrawCeilingType = block.ceiling
 
                     }
                     //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                    else if(skipDrawCeiling && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCeilingCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                    else if(skipDrawCeiling && j!==0 && block.ceiling === skipDrawCeilingType  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCeilingCount < FLOOR_SKIP_DRAW_MAX_DIST){
                         skipDrawCeilingCount += drawDist;
                     }
                     //end skipDraw
@@ -185,7 +187,7 @@ class view {
                         //draw skipped lines
                         if(skipDrawCeiling){
                             skipDrawCeiling = false
-                            if(block.ceiling){
+                            if(skipDrawCeilingType){
                                 this.context.fillStyle = skipDrawCeilingColour;
                                 this.context.fillRect(i * pixelWidth, skipDrawCeilingLine, pixelWidth+1,skipDrawCeilingCount +1  );
                             }
@@ -437,7 +439,7 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        this.renderMinimap(rays);
+        // this.renderMinimap(rays);
     }
 
     getRays() {

@@ -10,10 +10,12 @@ function gameLoop() {
 function displayLoop(){
     viewer.redraw();
     displayFPS()
+    window.requestAnimationFrame(displayLoop)
 }
 
 setInterval(gameLoop,1000/GAME_TICK_RATE);
-setInterval(displayLoop,1000/SCREEN_TICK_RATE);
+// setInterval(displayLoop,1000/SCREEN_TICK_RATE);
+window.requestAnimationFrame(displayLoop)
 
 //fps counter stuff
 let time = Date.now()
