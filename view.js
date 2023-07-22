@@ -103,10 +103,15 @@ class view {
         const pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         //render rays
         rays.forEach((ray, i) => {
-            let skipDrawLine = this.SCREEN_HEIGHT/2
-            let skipDraw = false
-            let skipDrawCount =0
+            //floor drawing variables
+            let skipDrawFloorLine = this.SCREEN_HEIGHT/2
+            let skipDrawFloor = false
+            let skipDrawFloorCount =0
             let skipDrawFloorColour = 'red'
+            //ceiling drawing variables
+            let skipDrawCeilingLine = 0
+            let skipDrawCeiling = false
+            let skipDrawCeilingCount =0
             let skipDrawCeilingColour = 'red'
 
             let previousBlock = ray.blocks[ray.blocks.length - 1]
@@ -121,7 +126,7 @@ class view {
                     let wallHeight = this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
-                    if(! skipDraw && drawStart > this.SCREEN_HEIGHT) return
+                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
 
                     let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
@@ -130,43 +135,62 @@ class view {
 
 
                     //DRAW THE FLOOR BLOCK
-                    //Draw ceiling at same time, ceiling is the same but upside down
-
                     //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                    if(!skipDraw && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
-                        skipDrawLine =drawStart
-                        skipDraw = true
-                        skipDrawCount += drawDist;
+                    if(!skipDrawFloor && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                        skipDrawFloorLine =drawStart
+                        skipDrawFloor = true
+                        skipDrawFloorCount += drawDist;
                         if(block.floor)
                             skipDrawFloorColour = block.floorColour
-                        if(block.ceiling)
-                            skipDrawCeilingColour = block.ceilingColour
 
                     }
                     //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                    else if(skipDraw && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
-                        skipDrawCount += drawDist;
+                    else if(skipDrawFloor && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        skipDrawFloorCount += drawDist;
                     }
                     //end skipDraw
                     else {
                         //draw skipped lines
-                        if(skipDraw){
-                            skipDraw = false
+                        if(skipDrawFloor){
+                            skipDrawFloor = false
                             if(block.floor){
                                 this.context.fillStyle = skipDrawFloorColour;
-                                this.context.fillRect(i * pixelWidth, skipDrawLine, pixelWidth+1,  drawStart - skipDrawLine+1);
+                                this.context.fillRect(i * pixelWidth, skipDrawFloorLine, pixelWidth+1,  drawStart - skipDrawFloorLine+1);
                             }
-                            if(block.ceiling){
-                                this.context.fillStyle = skipDrawCeilingColour;
-                                this.context.fillRect(i * pixelWidth, this.SCREEN_HEIGHT- drawStart, pixelWidth+1,  drawStart - skipDrawLine+1);
-                            }
-
-                            skipDrawCount =0;
+                            skipDrawFloorCount =0;
                         }
                         //draw large tile
                         if(block.floor) {
                             this.context.fillStyle = block.floorColour;
                             this.context.fillRect(i * pixelWidth, drawStart, pixelWidth + 1, drawDist + 1);
+                        }
+                    }
+
+                    //DRAW THE CEILING BLOCK
+                    //activate skip draw, dont skip when j == 0, so we don't get missed draws
+                    if(!skipDrawCeiling && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                        skipDrawCeilingLine = this.SCREEN_HEIGHT - drawStart -drawDist
+                        skipDrawCeiling = true
+                        skipDrawCeilingCount += drawDist;
+                        if(block.ceiling)
+                            skipDrawCeilingColour = block.ceilingColour
+
+                    }
+                    //continueSkipDraw, stop when j == 0, so we don't get missed draws
+                    else if(skipDrawCeiling && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCeilingCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        skipDrawCeilingCount += drawDist;
+                    }
+                    //end skipDraw
+                    else {
+                        //draw skipped lines
+                        if(skipDrawCeiling){
+                            skipDrawCeiling = false
+                            if(block.ceiling){
+                                this.context.fillStyle = skipDrawCeilingColour;
+                                this.context.fillRect(i * pixelWidth, skipDrawCeilingLine, pixelWidth+1,skipDrawCeilingCount +1  );
+                            }
+
+                            skipDrawCeilingCount =0;
                         }
                         if(block.ceiling) {
                             this.context.fillStyle = block.ceilingColour;
@@ -177,25 +201,25 @@ class view {
                     //draw from top of tile to bottom of tile
                     if (DEBUG_MODE) {
                         //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                        if(!skipDraw && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
-                            skipDrawLine =drawStart
-                            skipDraw = true
+                        if(!skipDrawFloor && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                            skipDrawFloorLine =drawStart
+                            skipDrawFloor = true
                             this.context.strokeStyle = 'red';
-                            skipDrawCount += drawDist;
+                            skipDrawFloorCount += drawDist;
                             // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                         }
                         //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                        else if(skipDraw && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        else if(skipDrawFloor && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
                             this.context.strokeStyle = 'blue';
-                            skipDrawCount += drawDist;
+                            skipDrawFloorCount += drawDist;
                         }
                         //end skipDraw
                         else {
                             //draw skipped lines
-                            if(skipDraw){
-                                skipDraw = false
-                                this.context.strokeRect(i * pixelWidth, skipDrawLine, pixelWidth+1,  drawStart - skipDrawLine+1);
-                                skipDrawCount =0;
+                            if(skipDrawFloor){
+                                skipDrawFloor = false
+                                this.context.strokeRect(i * pixelWidth, skipDrawFloorLine, pixelWidth+1,  drawStart - skipDrawFloorLine+1);
+                                skipDrawFloorCount =0;
                             }
                             //draw large tile
                             this.context.strokeStyle = 'yellow';

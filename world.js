@@ -17,6 +17,7 @@ class World{
         block.imageName = "wall.png"
         let floor = new FloorAndCeiling()
         let floor2 = new FloorAndCeiling()
+        floor2.ceiling = false
         floor2.floorColour = "black"
 
         let newMap = [];
