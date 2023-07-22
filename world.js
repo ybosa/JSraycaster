@@ -18,6 +18,7 @@ class World{
         let floor = new FloorAndCeiling()
         let floor2 = new FloorAndCeiling()
         floor2.ceiling = false
+        floor2.floor = false
         floor2.floorColour = "black"
 
         let newMap = [];
@@ -25,8 +26,8 @@ class World{
             let line = [];
             for(let j = 0; j < x; j++){
                 (Math.random() > 0.25) ?
-                line.push( (j*i%2 ===0)  ? floor : floor2)
-                    : line.push(block)
+                line.push( (j*i%2 ===0)  ? floor : floor2) :
+                     line.push(block)
             }
             newMap.push(line)
         }

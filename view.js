@@ -125,9 +125,9 @@ class view {
                 //draw floors and ceilings, and lack thereof (as
                 if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling)) {
                     let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
-                    let wallHeight = this.SCREEN_HEIGHT / distWall //[px]height of wall
+                    let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
-                    let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
+                    let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
                     if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
 
                     let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
@@ -240,7 +240,7 @@ class view {
 
     drawWall(ray, i, block) {
         let perpDistance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
-        let wallHeight = this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.imageName)
 
@@ -369,9 +369,9 @@ class view {
         const deltaDistX = Math.abs(CELL_SIZE / Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
         const deltaDistY = Math.abs(CELL_SIZE / Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
 
-        let sideDistX = (right) ? (Math.floor(player.x) + CELL_SIZE - player.x) / Math.cos(angle) : (Math.floor(player.x) - player.x) / Math.cos(angle)//distance to the next vertical wall
+        let sideDistX = (right) ? CELL_SIZE * (Math.floor(player.x / CELL_SIZE) + 1 - player.x / CELL_SIZE) / Math.cos(angle) : CELL_SIZE * (Math.floor(player.x / CELL_SIZE) - player.x / CELL_SIZE) / Math.cos(angle)//distance to the next vertical wall
         sideDistX = Math.abs(sideDistX)
-        let sideDistY = (up) ? (Math.floor(player.y) + CELL_SIZE - player.y) / Math.sin(angle) : (Math.floor(player.y) - player.y) / Math.sin(angle)   //distance to the next horizontal wall
+        let sideDistY = (up) ? CELL_SIZE * (Math.floor(player.y/ CELL_SIZE) + 1 - player.y/ CELL_SIZE) / Math.sin(angle) :CELL_SIZE * (Math.floor(player.y/CELL_SIZE) - player.y/CELL_SIZE) / Math.sin(angle)   //distance to the next horizontal wall
         sideDistY = Math.abs(sideDistY)
         let mapX = Math.floor(player.x / CELL_SIZE) //grid cell player is in x coord
         let mapY = Math.floor(player.y / CELL_SIZE) //grid cell player is in y coord
@@ -440,7 +440,7 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        // this.renderMinimap(rays);
+        this.renderMinimap(rays);
     }
 
     getRays() {
