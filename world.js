@@ -16,12 +16,16 @@ class World{
         let block = new Block()
         block.imageName = "wall.png"
         let floor = new Floor()
+        let floor2 = new Floor()
+        floor2.floorColour = "black"
 
         let newMap = [];
         for(let i = 0; i < y; i++){
             let line = [];
             for(let j = 0; j < x; j++){
-                line.push((Math.random() > 0.25) ? floor : block)
+                (Math.random() > 0.25) ?
+                line.push( (j*i%2 ===0)  ? floor : floor2)
+                    : line.push(block)
             }
             newMap.push(line)
         }

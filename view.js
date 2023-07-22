@@ -56,9 +56,15 @@ class view {
         let cellSize = scale * CELL_SIZE; //[px] pixels each cell takes up
         this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
-                if (cell) {
-                    this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
+                if(!cell) return
+
+
+                if(cell.floor){
+                    this.context.fillStyle = cell.floorColour;
+                    this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
                 }
+                else
+                    this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
             });
         });
         this.context.fillStyle = "blue";
@@ -119,17 +125,19 @@ class view {
                     let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
+                    //DRAW THE FLOOR BLOCK
+
                     //activate skip draw, dont skip when j == 0, so we don't get missed draws
                     if(!skipDraw && j!==0 && drawEnd - drawStart < FLOOR_SKIP_DRAW_THRESHOLD){
                         skipDrawLine =drawStart
                         skipDraw = true
-                        skipDrawColour = 'red';
+                        skipDrawColour = block.floorColour
                         skipDrawCount += drawEnd - drawStart;
                         // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                     }
                     //continueSkipDraw, stop when j == 0, so we don't get missed draws
                     else if(skipDraw && j!==0  && drawEnd - drawStart < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
-                        skipDrawColour = 'blue';
+                        skipDrawColour = block.floorColour
                         skipDrawCount += drawEnd - drawStart;
                     }
                     //end skipDraw
@@ -142,7 +150,7 @@ class view {
                             skipDrawCount =0;
                         }
                         //draw large tile
-                        this.context.fillStyle = 'yellow';
+                        this.context.fillStyle = block.floorColour;
                         this.context.fillRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart+1);
                     }
 

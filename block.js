@@ -3,8 +3,8 @@ class Block{
     invisible = false; //invisible blocks are not drawn
     transparent = false;//if block is transparent ray will draw it and blocks behind
     imageName = "missing.png";
-
     passable = false;
+
 }
 
 class Floor extends Block{
@@ -13,6 +13,9 @@ class Floor extends Block{
     imageName = "floor.png";
     passable = true;
     transparent = true;
+
+    floorColour = "white" //floors and ceilings drawn as solid colour blocks not textures due to performance cost
+    ceilingColour = "gray"//floors and ceilings drawn as solid colour blocks not textures due to performance cost
 }
 
-const ABYSS = new Block()
+const ABYSS = new Block() //placeholder block for out of bounds block logics
