@@ -230,7 +230,7 @@ class view {
                     }
                     previousBlock = useful
                 }
-                else if(block.wall)
+                if(block.wall)
                     this.drawWall(ray, i, useful)
             }
 
@@ -257,7 +257,7 @@ class view {
 
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
-            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 - wallHeight / 2, Math.floor(pixelWidth) + 1, wallHeight)
+            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, Math.floor(pixelWidth) + 1, wallHeight+2)
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';

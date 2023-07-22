@@ -22,4 +22,12 @@ class FloorAndCeiling extends Block{
     ceilingColour = "gray"//floors and ceilings drawn as solid colour blocks not textures due to performance cost
 }
 
+class Glass extends FloorAndCeiling{
+    wall = true;
+    passable = false;
+    imageName = "glass.png"
+    ceilingColour = "black"
+    floorColour = "blue"
+}
+
 const ABYSS = new Block() //placeholder block for out of bounds block logics
