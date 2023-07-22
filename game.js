@@ -12,8 +12,6 @@ function displayLoop(){
     displayFPS()
 }
 
-console.log("interval: "+ 1000/GAME_TICK_RATE)
-
 setInterval(gameLoop,1000/GAME_TICK_RATE);
 setInterval(displayLoop,1000/SCREEN_TICK_RATE);
 
