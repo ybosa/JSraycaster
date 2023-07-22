@@ -63,7 +63,7 @@ class view {
                     this.context.fillStyle = cell.floorColour;
                     this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
                 }
-                else
+                else if(cell.wall)
                     this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
             });
         });
@@ -90,8 +90,8 @@ class view {
             this.context.beginPath();
             this.context.moveTo(player.x * scale, player.y * scale);
             this.context.lineTo(
-                (player.x + Math.cos(ray.angle) * ray.distance) * scale,
-                (player.y + Math.sin(ray.angle) * ray.distance) * scale
+                (player.x + Math.cos(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale,
+                (player.y + Math.sin(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale
             );
             this.context.closePath();
             this.context.stroke();
@@ -231,22 +231,23 @@ class view {
                     previousBlock = useful
                 }
                 else if(block.wall)
-                    this.drawWall(ray, i, block)
+                    this.drawWall(ray, i, useful)
             }
 
         });
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
     }
 
-    drawWall(ray, i, block) {
-        let perpDistance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
+    drawWall(ray, i, useful) {
+        let block = useful.block
+        let perpDistance = fixFishEye(useful.distance, ray.angle, player.angle);//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.imageName)
 
         //process image sampling
-        let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width)) //FIXME CALC SAMPLING HERE OR BY BLOCK STORED NOT JUST FINAL BLOCK
-        let sampleImageHorizontalWidth = Math.abs(Math.floor(ray.hSampleWidth * img.width))
+        let sampleImageHorizontal = Math.abs(Math.floor(useful.horizontalSample * img.width))
+        let sampleImageHorizontalWidth = Math.abs(Math.floor(useful.hSampleWidth * img.width))
         sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth / 2)
         if (sampleImageHorizontalWidth <= 1) {
             sampleImageHorizontalWidth = 1
@@ -272,96 +273,6 @@ class view {
         // return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
-    getVCollision(angle) {
-        let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2);
-
-        let firstX = right
-            ? Math.floor(player.x / CELL_SIZE) * CELL_SIZE + CELL_SIZE
-            : Math.floor(player.x / CELL_SIZE) * CELL_SIZE;
-
-        let firstY = player.y + (firstX - player.x) * Math.tan(angle);
-
-        let xA = right ? CELL_SIZE : -CELL_SIZE;
-        let yA = xA * Math.tan(angle);
-
-        let wall;
-        let nextX = firstX;
-        let nextY = firstY;
-        while (!wall) {
-            let cellX = right
-                ? Math.floor(nextX / CELL_SIZE)
-                : Math.floor(nextX / CELL_SIZE) - 1;
-            let cellY = Math.floor(nextY / CELL_SIZE);
-
-            if (world.outOfMapBounds(cellX, cellY)) {
-                return {
-                    angle,
-                    distance: distance(player.x, player.y, Infinity, Infinity),
-                    vertical: true,
-                }
-            }
-            wall = this.map[cellY][cellX];
-            if (!wall) {
-                nextX += xA;
-                nextY += yA;
-            } else {
-            }
-        }
-        let Distance = distance(player.x, player.y, nextX, nextY)
-        return {
-            angle,
-            distance: Distance,
-            vertical: true,
-            block: wall,
-            horizontalSample: (right) ? Math.abs(nextY) - Math.abs(Math.floor(nextY)) : 1 - (Math.abs(nextY) - Math.abs(Math.floor(nextY))), // up? checks for img rotation, need to rotate image when facing downwards
-            hSampleWidth: this.calcImageSampleWidth(Distance, angle, Math.sin)
-        };
-    }
-
-    getHCollision(angle) {
-        let up = Math.abs(Math.floor(angle / Math.PI) % 2);
-        let firstY = up
-            ? Math.floor(player.y / CELL_SIZE) * CELL_SIZE
-            : Math.floor(player.y / CELL_SIZE) * CELL_SIZE + CELL_SIZE;
-        let firstX = player.x + (firstY - player.y) / Math.tan(angle);
-
-        let yA = up ? -CELL_SIZE : CELL_SIZE;
-        let xA = yA / Math.tan(angle);
-
-        let wall;
-        let nextX = firstX;
-        let nextY = firstY;
-        while (!wall) {
-            let cellX = Math.floor(nextX / CELL_SIZE);
-            let cellY = up
-                ? Math.floor(nextY / CELL_SIZE) - 1
-                : Math.floor(nextY / CELL_SIZE);
-
-            if (world.outOfMapBounds(cellX, cellY)) {
-                return {
-                    angle,
-                    distance: distance(player.x, player.y, Infinity, Infinity),
-                    vertical: true,
-                }
-            }
-
-            wall = (this.map)[cellY][cellX];
-            if (!wall) {
-                nextX += xA;
-                nextY += yA;
-            }
-        }
-        let Distance = distance(player.x, player.y, nextX, nextY)
-        return {
-            angle,
-            distance: Distance,
-            vertical: false,
-            block: wall,
-            horizontalSample: (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1 - (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
-            hSampleWidth: this.calcImageSampleWidth(Distance, angle, Math.cos)
-        };
-    }
-
     getCollision(angle) {
         let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
@@ -382,7 +293,7 @@ class view {
         let count = 0
         let blocks = [] //set of all the blocks visited by the ray
 
-        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance)
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0) //can ignore sampling value on block you are standing in, assuming its not a wall
         while (count <= MAX_RAY_DEPTH) {
             count++;
             let vertical = sideDistX < sideDistY;
@@ -402,26 +313,25 @@ class view {
                 blocks.push({block, distance})
                 return {
                     angle,
-                    distance: distance,
-                    vertical: vertical,
-                    horizontalSample: 0,
-                    hSampleWidth: 0,
                     blocks: blocks
                 };
             }
             //Not out of bounds so add current block to array (ignore invisible blocks
             if (!this.map[mapY][mapX].invisible) {
-                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance)
+                let horizontalSample = 0;
+                let hSampleWidth  = 0;
+                //only bother to sample textures walls
+                if(this.map[mapY][mapX].wall){
+                    horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
+                    hSampleWidth = this.calcImageSampleWidth(distance, angle, Math.cos);
+                }
+
+                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth)
             }
             //Check if ray has hit a wall, end raycast.
             if (!this.map[mapY][mapX].transparent) {
                 return {
                     angle,
-                    distance: distance,
-                    vertical: vertical,
-                    block: this.map[mapY][mapX],
-                    horizontalSample: (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up),
-                    hSampleWidth: this.calcImageSampleWidth(distance, angle, Math.cos),
                     blocks: blocks
                 };
             }
@@ -535,6 +445,6 @@ function initMissingIMG() {
     imageSet[missingImgName] = loadIMG
 }
 
-function pushBlocks(blocks,block, mapX, mapY, distance){
-    blocks.push({block, mapX, mapY, distance})
+function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth){
+    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth})
 }
