@@ -99,6 +99,8 @@ class view {
         rays.forEach((ray, i) => {
             let skipDrawLine = this.SCREEN_HEIGHT/2
             let skipDraw = false
+            let skipDrawCount =0
+            let skipDrawColour = 'red'
 
             let previousBlock = ray.blocks[ray.blocks.length - 1]
             for (let j = ray.blocks.length - 1; j >= 0; j--) {
@@ -113,55 +115,63 @@ class view {
                     let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
-                    if(drawStart > this.SCREEN_HEIGHT) return
+                    if(! skipDraw && drawStart > this.SCREEN_HEIGHT) return
                     let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
-                    if(drawEnd - drawStart < 2){
-                        if(!skipDraw){
-                            skipDrawLine =drawStart
-                            skipDraw = true
-                        }
-                        // this.context.strokeStyle = 'red';
+                    //activate skip draw, dont skip when j == 0, so we don't get missed draws
+                    if(!skipDraw && j!==0 && drawEnd - drawStart < FLOOR_SKIP_DRAW_THRESHOLD){
+                        skipDrawLine =drawStart
+                        skipDraw = true
+                        skipDrawColour = 'red';
+                        skipDrawCount += drawEnd - drawStart;
                         // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                     }
-                    else if(drawEnd - drawStart < 5){
-                        drawStart = (skipDraw) ? skipDrawLine : drawStart
-                        skipDraw = false
-                        this.context.strokeStyle = 'blue';
-                        this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                    //continueSkipDraw, stop when j == 0, so we don't get missed draws
+                    else if(skipDraw && j!==0  && drawEnd - drawStart < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        skipDrawColour = 'blue';
+                        skipDrawCount += drawEnd - drawStart;
                     }
+                    //end skipDraw
                     else {
-                        drawStart = (skipDraw) ? skipDrawLine : drawStart
-                        skipDraw = false
-                        let img = getImage(block.imageName)
-                        this.context.drawImage(img, 0,
-                            0, img.width, img.height,
-                            i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart)
+                        //draw skipped lines
+                        if(skipDraw){
+                            skipDraw = false
+                            this.context.fillStyle = skipDrawColour;
+                            this.context.fillRect(i * pixelWidth, skipDrawLine, pixelWidth+1,  drawStart - skipDrawLine+1);
+                            skipDrawCount =0;
+                        }
+                        //draw large tile
+                        this.context.fillStyle = 'yellow';
+                        this.context.fillRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart+1);
                     }
-
 
                     //draw from top of tile to bottom of tile
                     if (DEBUG_MODE) {
-                        if(drawEnd - drawStart < 2){
-                            if(!skipDraw){
-                                skipDrawLine =drawStart
-                                skipDraw = true
-                            }
-                            // this.context.strokeStyle = 'red';
+                        //activate skip draw, dont skip when j == 0, so we don't get missed draws
+                        if(!skipDraw && j!==0 && drawEnd - drawStart < FLOOR_SKIP_DRAW_THRESHOLD){
+                            skipDrawLine =drawStart
+                            skipDraw = true
+                            this.context.strokeStyle = 'red';
+                            skipDrawCount += drawEnd - drawStart;
                             // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                         }
-                        else if(drawEnd - drawStart < 10){
-                            drawStart = (skipDraw) ? skipDrawLine : drawStart
-                            skipDraw = false
+                        //continueSkipDraw, stop when j == 0, so we don't get missed draws
+                        else if(skipDraw && j!==0  && drawEnd - drawStart < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
                             this.context.strokeStyle = 'blue';
-                            this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                            skipDrawCount += drawEnd - drawStart;
                         }
+                        //end skipDraw
                         else {
-                            drawStart = (skipDraw) ? skipDrawLine : drawStart
-                            skipDraw = false
+                            //draw skipped lines
+                            if(skipDraw){
+                                skipDraw = false
+                                this.context.strokeRect(i * pixelWidth, skipDrawLine, pixelWidth+1,  drawStart - skipDrawLine+1);
+                                skipDrawCount =0;
+                            }
+                            //draw large tile
                             this.context.strokeStyle = 'yellow';
-                            this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
+                            this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart+1);
                         }
                     }
                     previousBlock = useful
