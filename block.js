@@ -5,12 +5,15 @@ class Block{
     imageName = "missing.png";
     passable = false;
 
+    floor = false;
+    ceiling = false;
+
 }
 
-class Floor extends Block{
+class FloorAndCeiling extends Block{
     floor = true;
+    ceiling = true;
     static = true;
-    imageName = "floor.png";
     passable = true;
     transparent = true;
 

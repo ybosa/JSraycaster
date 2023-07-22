@@ -15,8 +15,8 @@ class World{
     regenMap(x = 25,y=25){
         let block = new Block()
         block.imageName = "wall.png"
-        let floor = new Floor()
-        let floor2 = new Floor()
+        let floor = new FloorAndCeiling()
+        let floor2 = new FloorAndCeiling()
         floor2.floorColour = "black"
 
         let newMap = [];
