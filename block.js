@@ -4,7 +4,7 @@ class Block{
     transparent = false;//if block is transparent ray will draw it and blocks behind
     imageName = "missing.png";
     passable = false;
-
+    wall = true;
     floor = false;
     ceiling = false;
 
@@ -13,12 +13,21 @@ class Block{
 class FloorAndCeiling extends Block{
     floor = true;
     ceiling = true;
+    wall = false;
     static = true;
     passable = true;
     transparent = true;
 
     floorColour = "white" //floors and ceilings drawn as solid colour blocks not textures due to performance cost
     ceilingColour = "gray"//floors and ceilings drawn as solid colour blocks not textures due to performance cost
+}
+
+class Glass extends FloorAndCeiling{
+    wall = true;
+    passable = false;
+    imageName = "glass.png"
+    ceilingColour = "black"
+    floorColour = "blue"
 }
 
 const ABYSS = new Block() //placeholder block for out of bounds block logics

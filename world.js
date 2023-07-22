@@ -15,17 +15,17 @@ class World{
     regenMap(x = 25,y=25){
         let block = new Block()
         block.imageName = "wall.png"
+        let glass= new Glass()
+
         let floor = new FloorAndCeiling()
-        let floor2 = new FloorAndCeiling()
-        floor2.floorColour = "black"
 
         let newMap = [];
         for(let i = 0; i < y; i++){
             let line = [];
             for(let j = 0; j < x; j++){
                 (Math.random() > 0.25) ?
-                line.push( (j*i%2 ===0)  ? floor : floor2)
-                    : line.push(block)
+                line.push( (j*i%2 ===0)  ? floor : glass) :
+                     line.push(block)
             }
             newMap.push(line)
         }

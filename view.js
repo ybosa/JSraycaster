@@ -63,7 +63,7 @@ class view {
                     this.context.fillStyle = cell.floorColour;
                     this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
                 }
-                else
+                else if(cell.wall)
                     this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
             });
         });
@@ -90,8 +90,8 @@ class view {
             this.context.beginPath();
             this.context.moveTo(player.x * scale, player.y * scale);
             this.context.lineTo(
-                (player.x + Math.cos(ray.angle) * ray.distance) * scale,
-                (player.y + Math.sin(ray.angle) * ray.distance) * scale
+                (player.x + Math.cos(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale,
+                (player.y + Math.sin(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale
             );
             this.context.closePath();
             this.context.stroke();
@@ -103,11 +103,18 @@ class view {
         const pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         //render rays
         rays.forEach((ray, i) => {
-            let skipDrawLine = this.SCREEN_HEIGHT/2
-            let skipDraw = false
-            let skipDrawCount =0
+            //floor drawing variables
+            let skipDrawFloorLine = this.SCREEN_HEIGHT/2
+            let skipDrawFloor = false
+            let skipDrawFloorCount =0
             let skipDrawFloorColour = 'red'
+            let skipDrawFloorType = false //currently drawing a ceiling or empty gap
+            //ceiling drawing variables
+            let skipDrawCeilingLine = 0
+            let skipDrawCeiling = false
+            let skipDrawCeilingCount =0
             let skipDrawCeilingColour = 'red'
+            let skipDrawCeilingType = false //currently, drawing a ceiling or empty gap
 
             let previousBlock = ray.blocks[ray.blocks.length - 1]
             for (let j = ray.blocks.length - 1; j >= 0; j--) {
@@ -115,58 +122,77 @@ class view {
                 const block = useful.block
                 //ignore out of bounds or invisible blocks
                 if (block.invisible || block === ABYSS) continue
-                //draw floors and ceilings
-                if (block.floor || block.ceiling) {
+                //draw floors and ceilings, and lack thereof (as
+                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling)) {
                     let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
-                    let wallHeight = this.SCREEN_HEIGHT / distWall //[px]height of wall
+                    let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
-                    let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
-                    if(! skipDraw && drawStart > this.SCREEN_HEIGHT) return
+                    let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
+                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
 
-                    let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
+                    let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
                     const drawDist = drawEnd - drawStart
 
 
                     //DRAW THE FLOOR BLOCK
-                    //Draw ceiling at same time, ceiling is the same but upside down
-
-                    //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                    if(!skipDraw && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
-                        skipDrawLine =drawStart
-                        skipDraw = true
-                        skipDrawCount += drawDist;
-                        if(block.floor)
-                            skipDrawFloorColour = block.floorColour
-                        if(block.ceiling)
-                            skipDrawCeilingColour = block.ceilingColour
+                    //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
+                    if(!skipDrawFloor && block.floor && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                        skipDrawFloorLine =drawStart
+                        skipDrawFloor = true
+                        skipDrawFloorCount += drawDist;
+                        skipDrawFloorColour = block.floorColour
+                        skipDrawFloorType = block.floor
 
                     }
-                    //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                    else if(skipDraw && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
-                        skipDrawCount += drawDist;
+                    //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
+                    else if(skipDrawFloor && j!==0 && block.floor === skipDrawFloorType  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        skipDrawFloorCount += drawDist;
                     }
                     //end skipDraw
                     else {
                         //draw skipped lines
-                        if(skipDraw){
-                            skipDraw = false
-                            if(block.floor){
+                        if(skipDrawFloor){
+                            skipDrawFloor = false
+                            if(skipDrawFloorType){
                                 this.context.fillStyle = skipDrawFloorColour;
-                                this.context.fillRect(i * pixelWidth, skipDrawLine, pixelWidth+1,  drawStart - skipDrawLine+1);
+                                this.context.fillRect(i * pixelWidth, skipDrawFloorLine, pixelWidth+1,  drawStart - skipDrawFloorLine+1);
                             }
-                            if(block.ceiling){
-                                this.context.fillStyle = skipDrawCeilingColour;
-                                this.context.fillRect(i * pixelWidth, this.SCREEN_HEIGHT- drawStart, pixelWidth+1,  drawStart - skipDrawLine+1);
-                            }
-
-                            skipDrawCount =0;
+                            skipDrawFloorCount =0;
                         }
                         //draw large tile
                         if(block.floor) {
                             this.context.fillStyle = block.floorColour;
                             this.context.fillRect(i * pixelWidth, drawStart, pixelWidth + 1, drawDist + 1);
+                        }
+                    }
+
+                    //DRAW THE CEILING BLOCK
+                    //activate skip draw, dont skip when j == 0, so we don't get missed draws
+                    if(!skipDrawCeiling && block.ceiling && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                        skipDrawCeilingLine = this.SCREEN_HEIGHT - drawStart -drawDist
+                        skipDrawCeiling = true
+                        skipDrawCeilingCount += drawDist;
+                        skipDrawCeilingColour = block.ceilingColour
+                        skipDrawCeilingType = block.ceiling
+
+                    }
+                    //continueSkipDraw, stop when j == 0, so we don't get missed draws
+                    else if(skipDrawCeiling && j!==0 && block.ceiling === skipDrawCeilingType  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCeilingCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        skipDrawCeilingCount += drawDist;
+                    }
+                    //end skipDraw
+                    else {
+                        //draw skipped lines
+                        if(skipDrawCeiling){
+                            skipDrawCeiling = false
+                            if(skipDrawCeilingType){
+                                this.context.fillStyle = skipDrawCeilingColour;
+                                this.context.fillRect(i * pixelWidth, skipDrawCeilingLine, pixelWidth+1,skipDrawCeilingCount +1  );
+                            }
+
+                            skipDrawCeilingCount =0;
                         }
                         if(block.ceiling) {
                             this.context.fillStyle = block.ceilingColour;
@@ -177,25 +203,25 @@ class view {
                     //draw from top of tile to bottom of tile
                     if (DEBUG_MODE) {
                         //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                        if(!skipDraw && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
-                            skipDrawLine =drawStart
-                            skipDraw = true
+                        if(!skipDrawFloor && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                            skipDrawFloorLine =drawStart
+                            skipDrawFloor = true
                             this.context.strokeStyle = 'red';
-                            skipDrawCount += drawDist;
+                            skipDrawFloorCount += drawDist;
                             // this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawEnd - drawStart);
                         }
                         //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                        else if(skipDraw && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                        else if(skipDrawFloor && j!==0  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
                             this.context.strokeStyle = 'blue';
-                            skipDrawCount += drawDist;
+                            skipDrawFloorCount += drawDist;
                         }
                         //end skipDraw
                         else {
                             //draw skipped lines
-                            if(skipDraw){
-                                skipDraw = false
-                                this.context.strokeRect(i * pixelWidth, skipDrawLine, pixelWidth+1,  drawStart - skipDrawLine+1);
-                                skipDrawCount =0;
+                            if(skipDrawFloor){
+                                skipDrawFloor = false
+                                this.context.strokeRect(i * pixelWidth, skipDrawFloorLine, pixelWidth+1,  drawStart - skipDrawFloorLine+1);
+                                skipDrawFloorCount =0;
                             }
                             //draw large tile
                             this.context.strokeStyle = 'yellow';
@@ -203,23 +229,25 @@ class view {
                         }
                     }
                     previousBlock = useful
-                } else
-                    this.drawWall(ray, i, block)
+                }
+                if(block.wall)
+                    this.drawWall(ray, i, useful)
             }
 
         });
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
     }
 
-    drawWall(ray, i, block) {
-        let perpDistance = fixFishEye(ray.distance, ray.angle, player.angle);//[m] dist to wall
-        let wallHeight = this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+    drawWall(ray, i, useful) {
+        let block = useful.block
+        let perpDistance = fixFishEye(useful.distance, ray.angle, player.angle);//[m] dist to wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.imageName)
 
         //process image sampling
-        let sampleImageHorizontal = Math.abs(Math.floor(ray.horizontalSample * img.width)) //FIXME CALC SAMPLING HERE OR BY BLOCK STORED NOT JUST FINAL BLOCK
-        let sampleImageHorizontalWidth = Math.abs(Math.floor(ray.hSampleWidth * img.width))
+        let sampleImageHorizontal = Math.abs(Math.floor(useful.horizontalSample * img.width))
+        let sampleImageHorizontalWidth = Math.abs(Math.floor(useful.hSampleWidth * img.width))
         sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth / 2)
         if (sampleImageHorizontalWidth <= 1) {
             sampleImageHorizontalWidth = 1
@@ -229,7 +257,7 @@ class view {
 
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
-            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 - wallHeight / 2, Math.floor(pixelWidth) + 1, wallHeight)
+            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, Math.floor(pixelWidth) + 1, wallHeight+2)
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
@@ -245,96 +273,6 @@ class view {
         // return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
-    getVCollision(angle) {
-        let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2);
-
-        let firstX = right
-            ? Math.floor(player.x / CELL_SIZE) * CELL_SIZE + CELL_SIZE
-            : Math.floor(player.x / CELL_SIZE) * CELL_SIZE;
-
-        let firstY = player.y + (firstX - player.x) * Math.tan(angle);
-
-        let xA = right ? CELL_SIZE : -CELL_SIZE;
-        let yA = xA * Math.tan(angle);
-
-        let wall;
-        let nextX = firstX;
-        let nextY = firstY;
-        while (!wall) {
-            let cellX = right
-                ? Math.floor(nextX / CELL_SIZE)
-                : Math.floor(nextX / CELL_SIZE) - 1;
-            let cellY = Math.floor(nextY / CELL_SIZE);
-
-            if (world.outOfMapBounds(cellX, cellY)) {
-                return {
-                    angle,
-                    distance: distance(player.x, player.y, Infinity, Infinity),
-                    vertical: true,
-                }
-            }
-            wall = this.map[cellY][cellX];
-            if (!wall) {
-                nextX += xA;
-                nextY += yA;
-            } else {
-            }
-        }
-        let Distance = distance(player.x, player.y, nextX, nextY)
-        return {
-            angle,
-            distance: Distance,
-            vertical: true,
-            block: wall,
-            horizontalSample: (right) ? Math.abs(nextY) - Math.abs(Math.floor(nextY)) : 1 - (Math.abs(nextY) - Math.abs(Math.floor(nextY))), // up? checks for img rotation, need to rotate image when facing downwards
-            hSampleWidth: this.calcImageSampleWidth(Distance, angle, Math.sin)
-        };
-    }
-
-    getHCollision(angle) {
-        let up = Math.abs(Math.floor(angle / Math.PI) % 2);
-        let firstY = up
-            ? Math.floor(player.y / CELL_SIZE) * CELL_SIZE
-            : Math.floor(player.y / CELL_SIZE) * CELL_SIZE + CELL_SIZE;
-        let firstX = player.x + (firstY - player.y) / Math.tan(angle);
-
-        let yA = up ? -CELL_SIZE : CELL_SIZE;
-        let xA = yA / Math.tan(angle);
-
-        let wall;
-        let nextX = firstX;
-        let nextY = firstY;
-        while (!wall) {
-            let cellX = Math.floor(nextX / CELL_SIZE);
-            let cellY = up
-                ? Math.floor(nextY / CELL_SIZE) - 1
-                : Math.floor(nextY / CELL_SIZE);
-
-            if (world.outOfMapBounds(cellX, cellY)) {
-                return {
-                    angle,
-                    distance: distance(player.x, player.y, Infinity, Infinity),
-                    vertical: true,
-                }
-            }
-
-            wall = (this.map)[cellY][cellX];
-            if (!wall) {
-                nextX += xA;
-                nextY += yA;
-            }
-        }
-        let Distance = distance(player.x, player.y, nextX, nextY)
-        return {
-            angle,
-            distance: Distance,
-            vertical: false,
-            block: wall,
-            horizontalSample: (up) ? Math.abs(nextX) - Math.abs(Math.floor(nextX)) : 1 - (Math.abs(nextX) - Math.abs(Math.floor(nextX))), // up? checks for img rotation, need to rotate image when facing downwards
-            hSampleWidth: this.calcImageSampleWidth(Distance, angle, Math.cos)
-        };
-    }
-
     getCollision(angle) {
         let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
@@ -342,9 +280,9 @@ class view {
         const deltaDistX = Math.abs(CELL_SIZE / Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
         const deltaDistY = Math.abs(CELL_SIZE / Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
 
-        let sideDistX = (right) ? (Math.floor(player.x) + CELL_SIZE - player.x) / Math.cos(angle) : (Math.floor(player.x) - player.x) / Math.cos(angle)//distance to the next vertical wall
+        let sideDistX = (right) ? CELL_SIZE * (Math.floor(player.x / CELL_SIZE) + 1 - player.x / CELL_SIZE) / Math.cos(angle) : CELL_SIZE * (Math.floor(player.x / CELL_SIZE) - player.x / CELL_SIZE) / Math.cos(angle)//distance to the next vertical wall
         sideDistX = Math.abs(sideDistX)
-        let sideDistY = (up) ? (Math.floor(player.y) + CELL_SIZE - player.y) / Math.sin(angle) : (Math.floor(player.y) - player.y) / Math.sin(angle)   //distance to the next horizontal wall
+        let sideDistY = (up) ? CELL_SIZE * (Math.floor(player.y/ CELL_SIZE) + 1 - player.y/ CELL_SIZE) / Math.sin(angle) :CELL_SIZE * (Math.floor(player.y/CELL_SIZE) - player.y/CELL_SIZE) / Math.sin(angle)   //distance to the next horizontal wall
         sideDistY = Math.abs(sideDistY)
         let mapX = Math.floor(player.x / CELL_SIZE) //grid cell player is in x coord
         let mapY = Math.floor(player.y / CELL_SIZE) //grid cell player is in y coord
@@ -355,7 +293,7 @@ class view {
         let count = 0
         let blocks = [] //set of all the blocks visited by the ray
 
-        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance)
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0) //can ignore sampling value on block you are standing in, assuming its not a wall
         while (count <= MAX_RAY_DEPTH) {
             count++;
             let vertical = sideDistX < sideDistY;
@@ -375,26 +313,25 @@ class view {
                 blocks.push({block, distance})
                 return {
                     angle,
-                    distance: distance,
-                    vertical: vertical,
-                    horizontalSample: 0,
-                    hSampleWidth: 0,
                     blocks: blocks
                 };
             }
             //Not out of bounds so add current block to array (ignore invisible blocks
             if (!this.map[mapY][mapX].invisible) {
-                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance)
+                let horizontalSample = 0;
+                let hSampleWidth  = 0;
+                //only bother to sample textures walls
+                if(this.map[mapY][mapX].wall){
+                    horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
+                    hSampleWidth = this.calcImageSampleWidth(distance, angle, Math.cos);
+                }
+
+                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth)
             }
             //Check if ray has hit a wall, end raycast.
             if (!this.map[mapY][mapX].transparent) {
                 return {
                     angle,
-                    distance: distance,
-                    vertical: vertical,
-                    block: this.map[mapY][mapX],
-                    horizontalSample: (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up),
-                    hSampleWidth: this.calcImageSampleWidth(distance, angle, Math.cos),
                     blocks: blocks
                 };
             }
@@ -508,6 +445,6 @@ function initMissingIMG() {
     imageSet[missingImgName] = loadIMG
 }
 
-function pushBlocks(blocks,block, mapX, mapY, distance){
-    blocks.push({block, mapX, mapY, distance})
+function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth){
+    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth})
 }
