@@ -4,7 +4,7 @@ class Block{
     transparent = false;//if block is transparent ray will draw it and blocks behind
     imageName = "missing.png";
     passable = false;
-
+    wall = true;
     floor = false;
     ceiling = false;
 
@@ -13,6 +13,7 @@ class Block{
 class FloorAndCeiling extends Block{
     floor = true;
     ceiling = true;
+    wall = false;
     static = true;
     passable = true;
     transparent = true;

@@ -122,15 +122,15 @@ class view {
                 const block = useful.block
                 //ignore out of bounds or invisible blocks
                 if (block.invisible || block === ABYSS) continue
-                //draw floors and ceilings
-                if (block.floor || block.ceiling) {
+                //draw floors and ceilings, and lack thereof (as
+                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling)) {
                     let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
                     let wallHeight = this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
                     if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
 
-                    let drawEnd = (block.floor) ?(this.SCREEN_HEIGHT / 2 + wallHeight/2) : (this.SCREEN_HEIGHT / 2 - wallHeight/2)
+                    let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
                     const drawDist = drawEnd - drawStart
@@ -138,16 +138,16 @@ class view {
 
                     //DRAW THE FLOOR BLOCK
                     //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                    if(!skipDrawFloor && j!==0 && ray.blocks[j-1].block.floor && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
+                    if(!skipDrawFloor && block.floor && j!==0 && drawDist < FLOOR_SKIP_DRAW_THRESHOLD){
                         skipDrawFloorLine =drawStart
                         skipDrawFloor = true
                         skipDrawFloorCount += drawDist;
-                        if(block.floor)
-                            skipDrawFloorColour = block.floorColour
+                        skipDrawFloorColour = block.floorColour
+                        skipDrawFloorType = block.floor
 
                     }
                     //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
-                    else if(skipDrawFloor && j!==0 && ray.blocks[j-1].block.floor  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
+                    else if(skipDrawFloor && j!==0 && block.floor === skipDrawFloorType  && drawDist < FLOOR_SKIP_DRAW_THRESHOLD && skipDrawFloorCount < FLOOR_SKIP_DRAW_MAX_DIST){
                         skipDrawFloorCount += drawDist;
                     }
                     //end skipDraw
@@ -155,7 +155,7 @@ class view {
                         //draw skipped lines
                         if(skipDrawFloor){
                             skipDrawFloor = false
-                            if(block.floor){
+                            if(skipDrawFloorType){
                                 this.context.fillStyle = skipDrawFloorColour;
                                 this.context.fillRect(i * pixelWidth, skipDrawFloorLine, pixelWidth+1,  drawStart - skipDrawFloorLine+1);
                             }
@@ -229,7 +229,8 @@ class view {
                         }
                     }
                     previousBlock = useful
-                } else
+                }
+                else if(block.wall)
                     this.drawWall(ray, i, block)
             }
 
