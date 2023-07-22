@@ -229,11 +229,11 @@ class view {
 
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
-            i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth + 1, wallHeight)
+            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 - wallHeight / 2, Math.floor(pixelWidth) + 1, wallHeight)
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
-            this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth + 1, wallHeight);
+            this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth, wallHeight);
         }
     }
 
@@ -393,7 +393,7 @@ class view {
                     distance: distance,
                     vertical: vertical,
                     block: this.map[mapY][mapX],
-                    horizontalSample: (vertical) ? this.calcSample(vertical, distance, angle, mapY) : this.calcSample(vertical, distance, angle, mapX),
+                    horizontalSample: (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up),
                     hSampleWidth: this.calcImageSampleWidth(distance, angle, Math.cos),
                     blocks: blocks
                 };
@@ -401,9 +401,11 @@ class view {
         }
     }
 
+    calcSample(vertical, distance, angle, mapQ,right,up) {
+        const inv = (!vertical) ? up : !right
+        const sample = (vertical) ? (distance * Math.sin(angle) + player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + player.x) / CELL_SIZE - mapQ
 
-    calcSample(vertical, distance, angle, mapQ) {
-        return (vertical) ? (distance * Math.sin(angle) + player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + player.x) / CELL_SIZE - mapQ
+        return (inv) ? 1- sample : sample
     }
 
     redraw() {
