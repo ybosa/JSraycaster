@@ -39,6 +39,8 @@ class view {
         if (MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
         else this.numberOfRays = MAX_RAYS
 
+        this.distanceBetweenRaysOnScreen = 2*Math.tan(FOV/2) / this.numberOfRays //equal distance between rays on the screen, used to fix distortion
+
 
     }
 
@@ -354,10 +356,10 @@ class view {
     }
 
     getRays() {
-        let initialAngle = player.angle - FOV / 2;
-        let angleStep = FOV / this.numberOfRays;
+        let initialAngle = player.angle
+        // let angleStep = FOV / this.numberOfRays;
         return Array.from({length: this.numberOfRays}, (_, i) => {
-            let angle = initialAngle + i * angleStep;
+            let angle = initialAngle + Math.atan((i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  )
             return this.castRay(angle);
         });
     }
