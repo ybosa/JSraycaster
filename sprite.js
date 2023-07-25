@@ -16,7 +16,6 @@ class Sprite{
         let propHW = this.width/ (CELL_SIZE * 2) //proportional half width
         let overlap = this.width > CELL_SIZE || xDeci + propHW > 1 || xDeci - propHW <0 || yDeci + propHW > 1 || yDeci - propHW <0
         if(overlap){
-            console.log("MULTIPLE")
             let mapX = Math.floor(this.x/CELL_SIZE)
             let mapY = Math.floor(this.y/CELL_SIZE)
             let cellRadius = Math.floor (propHW) +1 //radius of circle described by entity

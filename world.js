@@ -56,7 +56,6 @@ class World{
         let y = Math.floor(entity.y/CELL_SIZE)
 
         this.putEntityCoords(entity,x,y)
-        console.log(this.entities)
     }
 
     putEntityCoords(entity, mapX,mapY){
