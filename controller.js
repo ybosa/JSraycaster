@@ -7,16 +7,16 @@ class Controller{
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowUp") {
-                player.speed = 2;
+                player.speed = 2*CELL_SIZE;
             }
             if (e.key === "ArrowDown") {
-                player.speed = -2;
+                player.speed = -2*CELL_SIZE;
             }
             if (e.key === "ArrowRight") {
-                player.sidewaysSpeed = 2;
+                player.sidewaysSpeed = 2*CELL_SIZE;
             }
             if (e.key === "ArrowLeft") {
-                player.sidewaysSpeed = -2;
+                player.sidewaysSpeed = -2*CELL_SIZE;
             }
         });
 
