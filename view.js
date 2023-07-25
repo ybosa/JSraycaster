@@ -124,6 +124,10 @@ class view {
                 const block = useful.block
                 //ignore out of bounds or invisible blocks
                 if (block.invisible || block === ABYSS) continue
+                if(block.sprite) {
+                    this.drawSprite(ray, i, useful)
+                    continue
+                }
                 //draw floors and ceilings, and lack thereof (as
                 if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling)) {
                     let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
@@ -222,12 +226,12 @@ class view {
                             //draw skipped lines
                             if(skipDrawFloor){
                                 skipDrawFloor = false
-                                this.context.strokeRect(i * pixelWidth, skipDrawFloorLine, pixelWidth+1,  drawStart - skipDrawFloorLine+1);
+                                this.context.strokeRect(Math.floor(i * pixelWidth), skipDrawFloorLine, Math.floor(pixelWidth)+1,  drawStart - skipDrawFloorLine+1);
                                 skipDrawFloorCount =0;
                             }
                             //draw large tile
                             this.context.strokeStyle = 'yellow';
-                            this.context.strokeRect(i * pixelWidth, drawStart, pixelWidth+1, drawDist+1);
+                            this.context.strokeRect(Math.floor(i * pixelWidth), drawStart, Math.floor(pixelWidth)+1, drawDist+1);
                         }
                     }
                     previousBlock = useful
@@ -267,15 +271,58 @@ class view {
         }
     }
 
-    castRay(angle) {
-        return this.getCollision(angle); //finds ray collisions with blocks
+    drawSprite(ray, i, useful){
+        let sprite = useful.block
+        let perpDistance = fixFishEye(useful.distance, ray.angle, player.angle);//[m] dist to wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let spriteHeight = this.SCREEN_HEIGHT / perpDistance * sprite.height //[px]height of wall
+        let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+        let img = getImage(sprite.imageName)
+
+        //process image sampling
+        let sampleImageHorizontal = (Math.floor(useful.horizontalSample * img.width))
+        if(sampleImageHorizontal > img.width) return
+        let sampleImageHorizontalWidth = Math.abs(Math.floor(useful.hSampleWidth * img.width))
+        sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth / 2)
+        if (sampleImageHorizontalWidth <= 1) {
+            sampleImageHorizontalWidth = 1
+        } else if (sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
+        else if (sampleImageHorizontal <= 0) sampleImageHorizontal = 0
+        //
+
+        this.context.drawImage(img, sampleImageHorizontal,
+            0, sampleImageHorizontalWidth, img.height,
+            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, Math.floor(pixelWidth) + 1, Math.floor(spriteHeight)+2)
+
+        if (DEBUG_MODE && pixelWidth > 5) {
+            this.context.strokeStyle = 'red';
+            this.context.strokeRect(Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, Math.floor(pixelWidth) + 1, Math.floor(spriteHeight)+2);
+        }
+    }
+
+    calculateSpriteSample(sprite,rayAngle){
+        let playerWithSpriteAngle = Math.atan2((sprite.y-player.y),(sprite.x-player.x)) -player.angle
+        rayAngle = rayAngle -player.angle
+
+
+        let ret = 1/2 + this.distance(player.x,player.y,sprite.x,sprite.y)/sprite.width*
+            (Math.cos(playerWithSpriteAngle)* Math.tan(rayAngle ) - Math.sin(playerWithSpriteAngle) )
+        return ret
+    }
+
+    calculateSpriteSampleWidth(sprite,rayAngle, prevAngle){
+        return Math.abs(this.calculateSpriteSample(sprite,rayAngle) -this.calculateSpriteSample(sprite,prevAngle) )
+    }
+
+    castRay(angle,prevAngle) {
+        return this.getCollision(angle,prevAngle); //finds ray collisions with blocks
         // let vCollision = this.getVCollision(angle);
         // let hCollision = this.getHCollision(angle);
         //
         // return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
-    getCollision(angle) {
+    getCollision(angle,prevAngle) {
         let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
 
@@ -318,16 +365,24 @@ class view {
                     blocks: blocks
                 };
             }
+
+            //not out of bounds so add sprite to array if it exists
+            //TODO IMPLEMENT MULTIPLE ENTITIES AND TEXTURE SAMPLING VERTICAL + HORIZONTAL
+            if(world.getEntity(mapX,mapY) && world.getEntity(mapX,mapY).sprite ){
+                pushBlocks(blocks,world.getEntity(mapX,mapY), mapX, mapY, this.distance(player.x,player.y,world.getEntity(mapX,mapY).x,world.getEntity(mapX,mapY).y),
+                    this.calculateSpriteSample(world.getEntity(mapX,mapY),angle),
+                    this.calculateSpriteSampleWidth(world.getEntity(mapX,mapY),angle,prevAngle))
+            }
+
             //Not out of bounds so add current block to array (ignore invisible blocks
             if (!this.map[mapY][mapX].invisible) {
                 let horizontalSample = 0;
                 let hSampleWidth  = 0;
-                //only bother to sample textures walls
+                //only bother to sample textures for walls
                 if(this.map[mapY][mapX].wall){
                     horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
                     hSampleWidth = this.calcImageSampleWidth(distance, angle, Math.cos);
                 }
-
                 pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth)
             }
             //Check if ray has hit a wall, end raycast.
@@ -357,10 +412,14 @@ class view {
 
     getRays() {
         let initialAngle = player.angle
+        let prevAngle = initialAngle
         // let angleStep = FOV / this.numberOfRays;
         return Array.from({length: this.numberOfRays}, (_, i) => {
-            let angle = initialAngle + Math.atan((i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  )
-            return this.castRay(angle);
+            let dAngle = Math.atan((i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  )
+            let angle = initialAngle + dAngle
+            let temp = prevAngle
+            prevAngle = angle
+            return this.castRay(angle,temp);
         });
     }
 
@@ -390,15 +449,16 @@ class view {
             this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX, 0, ScreenRemainingX, this.SCREEN_HEIGHT)
         }
     }
+
+    distance(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
 }
 
 function toRadians(deg) {
     return (deg * Math.PI) / 180;
 }
 
-function distance(x1, y1, x2, y2) {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-}
 
 function fixFishEye(distance, angle, playerAngle) {
     let diff = angle - playerAngle;

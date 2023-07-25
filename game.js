@@ -1,6 +1,11 @@
 let world = new World()
 world.map[2][1] = new FloorAndCeiling()
 let player = new Player(CELL_SIZE * 1.5,CELL_SIZE * 2,toRadians(90),0,world)
+let entityyyyyyy = new Sprite()
+entityyyyyyy.imageName = "debug.png"
+entityyyyyyy.x = 5.5*CELL_SIZE
+entityyyyyyy.y = 5.5*CELL_SIZE
+world.putEntity(entityyyyyyy)
 let viewer = new view(player)
 let controller = new Controller(player,viewer.canvas)
 
