@@ -273,7 +273,7 @@ class view {
 
     drawSprite(ray, i, useful){
         let sprite = useful.block
-        let perpDistance = fixFishEye(useful.distance, ray.angle, player.angle);//[m] dist to wall
+        let perpDistance = useful.distance//[m] ignore perpendicular distance for sprites
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let spriteHeight = this.SCREEN_HEIGHT / perpDistance * sprite.height //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
@@ -281,21 +281,23 @@ class view {
 
         //process image sampling
         let sampleImageHorizontal = (Math.floor(useful.horizontalSample * img.width))
-        if(sampleImageHorizontal > img.width) return
+        //FIXME may cause issues with images being cut off on the sides with a small number of rays
+        if(sampleImageHorizontal > img.width || sampleImageHorizontal < 0) return
         let sampleImageHorizontalWidth = Math.abs(Math.floor(useful.hSampleWidth * img.width))
-        sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth / 2)
         if (sampleImageHorizontalWidth <= 1) {
             sampleImageHorizontalWidth = 1
-        } else if (sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
-        else if (sampleImageHorizontal <= 0) sampleImageHorizontal = 0
-        //
+        }
+        //FIXME may cause issues with images being cut off on the sides with a small number of rays
+        if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width)return;
+
+
 
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
             Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, Math.floor(pixelWidth) + 1, Math.floor(spriteHeight)+2)
 
         if (DEBUG_MODE && pixelWidth > 5) {
-            this.context.strokeStyle = 'red';
+            this.context.strokeStyle = 'white';
             this.context.strokeRect(Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, Math.floor(pixelWidth) + 1, Math.floor(spriteHeight)+2);
         }
     }
@@ -305,9 +307,8 @@ class view {
         rayAngle = rayAngle -player.angle
 
 
-        let ret = 1/2 + this.distance(player.x,player.y,sprite.x,sprite.y)/sprite.width*
+        return 1/2 + this.distance(player.x,player.y,sprite.x,sprite.y)/sprite.width*
             (Math.cos(playerWithSpriteAngle)* Math.tan(rayAngle ) - Math.sin(playerWithSpriteAngle) )
-        return ret
     }
 
     calculateSpriteSampleWidth(sprite,rayAngle, prevAngle){
@@ -316,10 +317,6 @@ class view {
 
     castRay(angle,prevAngle) {
         return this.getCollision(angle,prevAngle); //finds ray collisions with blocks
-        // let vCollision = this.getVCollision(angle);
-        // let hCollision = this.getHCollision(angle);
-        //
-        // return hCollision.distance >= vCollision.distance ? vCollision : hCollision; //ret shorter dist
     }
 
     getCollision(angle,prevAngle) {
@@ -368,10 +365,15 @@ class view {
 
             //not out of bounds so add sprite to array if it exists
             //TODO IMPLEMENT MULTIPLE ENTITIES AND TEXTURE SAMPLING VERTICAL + HORIZONTAL
-            if(world.getEntity(mapX,mapY) && world.getEntity(mapX,mapY).sprite ){
-                pushBlocks(blocks,world.getEntity(mapX,mapY), mapX, mapY, this.distance(player.x,player.y,world.getEntity(mapX,mapY).x,world.getEntity(mapX,mapY).y),
-                    this.calculateSpriteSample(world.getEntity(mapX,mapY),angle),
-                    this.calculateSpriteSampleWidth(world.getEntity(mapX,mapY),angle,prevAngle))
+            if(world.getEntities(mapX,mapY) && world.getEntities(mapX,mapY).length > 0 ){
+                world.getEntities(mapX,mapY).forEach((entity, i) =>{
+                    if(entity.sprite)
+                        pushBlocks(blocks,entity, mapX, mapY, this.distance(player.x,player.y,entity.x,entity.y),
+                            this.calculateSpriteSample(entity,angle),
+                            this.calculateSpriteSampleWidth(entity,angle,prevAngle))
+                })
+
+
             }
 
             //Not out of bounds so add current block to array (ignore invisible blocks

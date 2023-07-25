@@ -20,6 +20,8 @@ class World{
         let glass= new Glass()
 
         let floor = new FloorAndCeiling()
+        floor.ceiling = false
+        floor.floor = false
 
         let newMap = [];
         for(let i = 0; i < y; i++){
@@ -42,18 +44,26 @@ class World{
         return newMap
     }
 
-    //TODO IMPLEMENT MULTIPLE ENTITIES ON ONE TILE
-    getEntity(mapX,mapY){
+    getEntities(mapX, mapY){
         let x = Math.floor(mapX)
         let y = Math.floor(mapY)
 
         return this.entities[x+","+y]
     }
-    //TODO IMPLEMENT MULTIPLE ENTITIES ON ONE TILE
+
     putEntity(entity){
         let x = Math.floor(entity.x / CELL_SIZE)
         let y = Math.floor(entity.y/CELL_SIZE)
 
-        this.entities[x+","+y] = entity
+        this.putEntityCoords(entity,x,y)
+        console.log(this.entities)
+    }
+
+    putEntityCoords(entity, mapX,mapY){
+
+        if(!this.entities[mapX+","+mapY]){
+            this.entities[mapX+","+mapY] = []
+        }
+        this.entities[mapX+","+mapY].push(entity)
     }
 }

@@ -5,6 +5,13 @@ let entityyyyyyy = new Sprite()
 entityyyyyyy.imageName = "debug.png"
 entityyyyyyy.x = 5.5*CELL_SIZE
 entityyyyyyy.y = 5.5*CELL_SIZE
+let ent2 = new Sprite()
+ent2.imageName = "glass.png"
+ent2.x = 5.5*CELL_SIZE
+ent2.y = 5.5*CELL_SIZE
+ent2.width = 5.5
+ent2.placeSprite(world)
+console.log(world.entities)
 world.putEntity(entityyyyyyy)
 let viewer = new view(player)
 let controller = new Controller(player,viewer.canvas)
