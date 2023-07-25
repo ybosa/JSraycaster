@@ -5,9 +5,19 @@ class World{
 
     //TODO IMPLEMENT ENTITY COLLISION
     collides(x,y){
-        x = Math.floor(x / CELL_SIZE)
-        y = Math.floor(y / CELL_SIZE)
-        return this.outOfMapBounds(x,y) || !this.map[y][x].passable
+        let mapX = Math.floor(x / CELL_SIZE)
+        let mapY = Math.floor(y / CELL_SIZE)
+
+        //check entity collision
+        if(this.getEntities(mapX,mapY)) {
+            for (let i = 0; i < this.getEntities(mapX, mapY).length; i++) {
+                let entity = this.getEntities(mapX, mapY)[i]
+                if ((Math.pow(entity.x - x, 2) + Math.pow(entity.y - y, 2)) <= entity.width * entity.width)
+                    return true
+            }
+        }
+
+        return this.outOfMapBounds(mapX,mapY) || !this.map[mapY][mapX].passable
     }
 
     outOfMapBounds(mapX, mapY) {

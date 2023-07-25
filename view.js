@@ -364,9 +364,8 @@ class view {
             }
 
             //not out of bounds so add sprite to array if it exists
-            //TODO IMPLEMENT MULTIPLE ENTITIES AND TEXTURE SAMPLING VERTICAL + HORIZONTAL
             if(world.getEntities(mapX,mapY) && world.getEntities(mapX,mapY).length > 0 ){
-                world.getEntities(mapX,mapY).forEach((entity, i) =>{
+                world.getEntities(mapX,mapY).forEach((entity) =>{
                     if(entity.sprite)
                         pushBlocks(blocks,entity, mapX, mapY, this.distance(player.x,player.y,entity.x,entity.y),
                             this.calculateSpriteSample(entity,angle),

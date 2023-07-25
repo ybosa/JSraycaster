@@ -7,8 +7,6 @@ class Sprite{
 
     x;y; //coords of sprite
 
-    //TODO DEAL WITH SPRITES TAKING UP MULTIPLE TILES
-
     placeSprite(world){
         //works with proportions (0 to 1) because it is easier
         let xDeci = this.x/CELL_SIZE - Math.floor(this.x/CELL_SIZE)
