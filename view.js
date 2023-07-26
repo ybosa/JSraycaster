@@ -259,15 +259,26 @@ class view {
             sampleImageHorizontalWidth = 1
         } else if (sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
         else if (sampleImageHorizontal <= 0) sampleImageHorizontal = 0
-        //
 
+        //fix overdrawing ray bounds
+        let drawStart = Math.floor(i *pixelWidth)
+        let nextDrawStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawStart - drawStart)
+
+        //draw Image
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
-            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, Math.floor(pixelWidth) + 1, wallHeight+2)
+            drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
+
+        //draw lighting
+        this.context.fillStyle = 'red';
+        this.context.globalAlpha = 0.1;
+        this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
+        this.context.globalAlpha = 1.0;
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
-            this.context.strokeRect(i * pixelWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2, pixelWidth, wallHeight);
+            this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
         }
     }
 
@@ -290,15 +301,18 @@ class view {
         //FIXME may cause issues with images being cut off on the sides with a small number of rays
         if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width)return;
 
-
+        //fix overdrawing ray bounds
+        let drawStart = Math.floor(i *pixelWidth)
+        let nextDrawStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawStart - drawStart)
 
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
-            Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, Math.floor(pixelWidth) + 1, Math.floor(spriteHeight)+2)
+            drawStart, this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, drawWidth, Math.floor(spriteHeight)+2)
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'white';
-            this.context.strokeRect(Math.floor(i * pixelWidth), this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, Math.floor(pixelWidth) + 1, Math.floor(spriteHeight)+2);
+            this.context.strokeRect( drawStart, this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, drawWidth, Math.floor(spriteHeight)+2);
         }
     }
 
