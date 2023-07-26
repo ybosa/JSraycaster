@@ -271,10 +271,10 @@ class view {
             drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
 
         //draw lighting
-        this.context.fillStyle = 'red';
-        this.context.globalAlpha = 0.1;
-        this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
-        this.context.globalAlpha = 1.0;
+        // this.context.fillStyle = 'red';
+        // this.context.globalAlpha = 0.1;
+        // this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
+        // this.context.globalAlpha = 1.0;
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
