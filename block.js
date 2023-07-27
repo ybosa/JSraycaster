@@ -7,7 +7,7 @@ class Block{
     wall = true;
     floor = false;
     ceiling = false;
-
+    block = true;
 }
 
 class FloorAndCeiling extends Block{

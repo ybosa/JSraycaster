@@ -7,7 +7,7 @@ class Controller{
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowUp") {
-                player.speed = 2*CELL_SIZE;
+                player.speed = 5*CELL_SIZE;
             }
             if (e.key === "ArrowDown") {
                 player.speed = -2*CELL_SIZE;

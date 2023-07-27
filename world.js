@@ -48,8 +48,8 @@ class World{
                     line.push(block)
                 }
                 else if (i % 4 === 0 && j % 4 ===0) {
-                    // (Math.random() > 0.25) ?
-                    //     line.push((j * i % 2 === 0) ? floor : floor) :
+                    (Math.random() > 0.25) ?
+                        line.push((j * i % 2 === 0) ? glass : floor) :
                         line.push(block)
                 }
                 else line.push(floor)

@@ -444,7 +444,7 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        // this.renderMinimap(rays);
+        this.renderMinimap(rays);
     }
 
     getRays() {
