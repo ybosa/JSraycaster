@@ -1,6 +1,6 @@
 class Block{
     static = true; //static blocks are always identical, so only 1 of its kind need to be crated
-    invisible = false; //invisible blocks are not drawn
+    invisible = false; //invisible blocks are not drawn FIXME not handled correctly
     transparent = false;//if block is transparent ray will draw it and blocks behind
     imageName = "missing.png";
     passable = false;
@@ -31,3 +31,12 @@ class Glass extends FloorAndCeiling{
 }
 
 const ABYSS = new Block() //placeholder block for out of bounds block logics
+
+class Air extends Block{
+    invisible = false; //invisible blocks are not drawn FIXME
+    transparent = true;//if block is transparent ray will draw it and blocks behind
+    passable = true;
+    wall = false;
+    floor = false;
+    ceiling = false;
+}

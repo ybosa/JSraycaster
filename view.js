@@ -271,10 +271,11 @@ class view {
             drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
 
         //draw lighting
-        // this.context.fillStyle = 'red';
-        // this.context.globalAlpha = 0.1;
-        // this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
-        // this.context.globalAlpha = 1.0;
+        if(useful.light) {
+            this.context.fillStyle = 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')';
+            this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
+        }
+
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
@@ -352,8 +353,7 @@ class view {
         let distance = 0;
         let count = 0
         let blocks = [] //set of all the blocks visited by the ray
-
-        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0) //can ignore sampling value on block you are standing in, assuming its not a wall
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,world.getLightColour(mapX,mapY)) //can ignore sampling value on block you are standing in, assuming its not a wall
         while (count <= MAX_RAY_DEPTH) {
             count++;
             let vertical = sideDistX < sideDistY;
@@ -383,23 +383,28 @@ class view {
                     if(entity.sprite)
                         pushBlocks(blocks,entity, mapX, mapY, this.distance(player.x,player.y,entity.x,entity.y),
                             this.calculateSpriteSample(entity,angle),
-                            this.calculateSpriteSampleWidth(entity,angle,prevAngle))
+                            this.calculateSpriteSampleWidth(entity,angle,prevAngle),
+                            world.getLightColour(mapX,mapY))
                 })
-
-
             }
 
             //Not out of bounds so add current block to array (ignore invisible blocks
             if (!this.map[mapY][mapX].invisible) {
                 let horizontalSample = 0;
                 let hSampleWidth  = 0;
+                let light = world.getLightColour(mapX,mapY)
                 //only bother to sample textures for walls
                 if(this.map[mapY][mapX].wall){
                     horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
                     hSampleWidth = this.calcImageSampleWidth(distance, angle, Math.cos);
+                    //light level illuminating this non-transparent block is from previous one
+                    if(!this.map[mapY][mapX].transparent)
+                        light = blocks[blocks.length -1].light
+
                 }
-                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth)
+                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth, light)
             }
+
             //Check if ray has hit a wall, end raycast.
             if (!this.map[mapY][mapX].transparent) {
                 return {
@@ -522,6 +527,6 @@ function initMissingIMG() {
     imageSet[missingImgName] = loadIMG
 }
 
-function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth){
-    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth})
+function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth,light){
+    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth,light})
 }
