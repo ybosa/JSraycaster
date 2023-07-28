@@ -1,11 +1,9 @@
-class Sprite{
+class Sprite extends Entity{
     sprite = true //caster and renderer treat sprites as 2d objects not blocks
-    static = true
     imageName = "missing.png"
     width  = 2 //[m] physical width of sprite
     height = 2 //[m] physical height of sprite
-
-    x;y; //coords of sprite
+    passable = false
 
     placeSprite(world){
         //works with proportions (0 to 1) because it is easier
