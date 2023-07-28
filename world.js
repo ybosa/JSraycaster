@@ -50,9 +50,10 @@ class World{
                 else if (i % 4 === 0 && j % 4 ===0) {
                     (Math.random() > 0.25) ?
                         line.push((j * i % 2 === 0) ? glass : floor) :
-                        line.push(block)
+                        line.push(floor)
                 }
-                else line.push(floor)
+                else if(Math.random() > 0.25 ) line.push(floor)
+                else line.push(block)
             }
             newMap.push(line)
         }
@@ -76,10 +77,7 @@ class World{
     }
 
     placeLight(light){
-        console.log(Math.floor(light.radius/CELL_SIZE))
-        let m = new Map()
-        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),Math.floor(light.radius/CELL_SIZE) , m)
-        console.log(m)
+        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),Math.floor(light.radius/CELL_SIZE) , new Map())
     }
 
     placeLightHelper(light,mapX,mapY,i,visited){
@@ -137,7 +135,7 @@ class World{
     }
 
     genEntities(){
-        this.placeLight(new Light((15+0.5)*CELL_SIZE, (15+0.5)*CELL_SIZE, 10*CELL_SIZE, [255,125,125,0.25],0))
+        this.placeLight(new Light((15+0.5)*CELL_SIZE, (15+0.5)*CELL_SIZE, 5*CELL_SIZE, [255,125,125,0.25],0))
         return
 
         let lenY = this.map.length

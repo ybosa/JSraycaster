@@ -3,6 +3,7 @@ class Sprite extends Entity{
     imageName = "missing.png"
     width  = 2 //[m] physical width of sprite
     height = 2 //[m] physical height of sprite
+    passable = false
 
     placeSprite(world){
         //works with proportions (0 to 1) because it is easier
