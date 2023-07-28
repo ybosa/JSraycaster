@@ -13,7 +13,7 @@ class World{
         if(this.getEntities(mapX,mapY)) {
             for (let i = 0; i < this.getEntities(mapX, mapY).length; i++) {
                 let entity = this.getEntities(mapX, mapY)[i]
-                if ((Math.pow(entity.x - x, 2) + Math.pow(entity.y - y, 2)) <= entity.width * entity.width)
+                if (!entity.passable && (Math.pow(entity.x - x, 2) + Math.pow(entity.y - y, 2)) <= entity.width * entity.width)
                     return true
             }
         }
@@ -76,28 +76,37 @@ class World{
     }
 
     placeLight(light){
-        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),0)
+        console.log(Math.floor(light.radius/CELL_SIZE))
+        let m = new Map()
+        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),Math.floor(light.radius/CELL_SIZE) , m)
+        console.log(m)
     }
 
-    placeLightHelper(light,mapX,mapY,i){
-        if(!light || i > Math.floor(light.radius/ CELL_SIZE) || this.outOfMapBounds(mapX,mapY) || !this.map[mapY][mapX].transparent ||(this.lightMap[mapY][mapX] && this.lightMap[mapY][mapX].lights.includes(light)) )return
-        if(!this.lightMap[mapY][mapX]) {
-            let colour = light.colour;
-            let lights = []
-            lights.push(light)
-            this.lightMap[mapY][mapX] = {colour,lights}
+    placeLightHelper(light,mapX,mapY,i,visited){
+        if(!light || i < 0 || this.outOfMapBounds(mapX,mapY) ||
+            !this.map[mapY][mapX].transparent  )return
+
+        else if(!this.lightMap[mapY][mapX]) {
+            let colour = light.calcColourAtDist(mapX*CELL_SIZE,mapY*CELL_SIZE);
+            if(colour) {
+                let lights = []
+                lights.push(light)
+                this.lightMap[mapY][mapX] = {colour, lights}
+                visited[mapY + "," + mapX] = i
+            }
         }
+        else if(this.lightMap[mapY][mapX].lights.includes(light)){}
         else {
             let lights =this.lightMap[mapY][mapX].lights
             lights.push(light)
-            let colour = light.averageColourValues(lights,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
+            let colour = averageColourValues(lights,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
             this.lightMap[mapY][mapX] = {colour,lights}
+            visited[ mapY+","+mapX] =i
         }
-
-        this.placeLightHelper(light,mapX,mapY+1,i++)
-        this.placeLightHelper(light,mapX,mapY-1,i++)
-        this.placeLightHelper(light,mapX+1,mapY,i++)
-        this.placeLightHelper(light,mapX-1,mapY,i++)
+        this.placeLightHelper(light,mapX,mapY+1,i-1,visited)
+        this.placeLightHelper(light,mapX,mapY-1,i-1,visited)
+        this.placeLightHelper(light,mapX+1,mapY,i-1,visited)
+        this.placeLightHelper(light,mapX-1,mapY,i-1,visited)
     }
 
     getLightColour(mapX,mapY){
@@ -128,12 +137,15 @@ class World{
     }
 
     genEntities(){
+        this.placeLight(new Light((15+0.5)*CELL_SIZE, (15+0.5)*CELL_SIZE, 10*CELL_SIZE, [255,125,125,0.25],0))
+        return
+
         let lenY = this.map.length
         let lenX = this.map[0].length
         for(let i = 0; i < lenY; i++){
             for(let j = 0; j < lenX; j++){
                 if((this.map)[i][j].passable && (this.map)[i][j].ceiling  &&(this.map)[i][j].transparent && Math.random() < 0.05 ){
-                    this.placeLight(new Light((j+0.5)*CELL_SIZE, (i+0.5)*CELL_SIZE, 10*CELL_SIZE, [255,125,125,0.25],0.1))
+                    this.placeLight(new Light((j+0.5)*CELL_SIZE, (i+0.5)*CELL_SIZE, 10*CELL_SIZE, [255,125,125,0.25],0.25))
                 }
             }
         }

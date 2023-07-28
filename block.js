@@ -18,16 +18,16 @@ class FloorAndCeiling extends Block{
     passable = true;
     transparent = true;
 
-    floorColour = "white" //floors and ceilings drawn as solid colour blocks not textures due to performance cost
-    ceilingColour = "gray"//floors and ceilings drawn as solid colour blocks not textures due to performance cost
+    floorColour = [255,255,255,1] //floors and ceilings drawn as solid colour blocks not textures due to performance cost
+    ceilingColour = [125,125,125,1]//floors and ceilings drawn as solid colour blocks not textures due to performance cost
 }
 
 class Glass extends FloorAndCeiling{
     wall = true;
     passable = false;
     imageName = "glass.png"
-    ceilingColour = "black"
-    floorColour = "blue"
+    ceilingColour = [0,0,0,1]
+    floorColour = [0,0,255,1]
 }
 
 const ABYSS = new Block() //placeholder block for out of bounds block logics
