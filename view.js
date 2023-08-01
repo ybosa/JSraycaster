@@ -127,7 +127,8 @@ class view {
                     continue
                 }
                 //draw floors and ceilings, and lack thereof (as
-                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling)) {
+                //FIXME debug entry condition to this branch, may just need to be true
+                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling) || block.transparent) {
                     //fix overdrawing ray bounds
                     let drawHorizStart = Math.floor(i *pixelWidth)
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
@@ -266,6 +267,8 @@ class view {
                 }
                 if(block.wall)
                     this.drawWall(ray, i, useful)
+
+                previousBlock = useful
             }
 
         });
@@ -346,16 +349,25 @@ class view {
     }
 
     calculateSpriteSample(sprite,rayAngle){
+        //Can be greater than 2pi
         let playerWithSpriteAngle = Math.atan2((sprite.y-player.y),(sprite.x-player.x)) -player.angle
         rayAngle = rayAngle -player.angle
 
+
+
+        //FIXME drawing sprites when behind player
+        //FIXME not drawing sides of  sprites when close to player
 
         return 1/2 + this.distance(player.x,player.y,sprite.x,sprite.y)/sprite.width*
             (Math.cos(playerWithSpriteAngle)* Math.tan(rayAngle ) - Math.sin(playerWithSpriteAngle) )
     }
 
     calculateSpriteSampleWidth(sprite,rayAngle, prevAngle){
-        return Math.abs(this.calculateSpriteSample(sprite,rayAngle) -this.calculateSpriteSample(sprite,prevAngle) )
+        let sampleEnd = this.calculateSpriteSample(sprite,rayAngle)
+        let sampleStart = this.calculateSpriteSample(sprite,prevAngle)
+        if(!sampleEnd || !sampleStart)
+            return undefined
+        return Math.abs(sampleEnd - sampleStart )
     }
 
     castRay(angle,prevAngle) {
@@ -408,11 +420,13 @@ class view {
             //not out of bounds so add sprite to array if it exists
             if(world.getEntities(mapX,mapY) && world.getEntities(mapX,mapY).length > 0 ){
                 world.getEntities(mapX,mapY).forEach((entity) =>{
-                    if(entity.sprite)
-                        pushBlocks(blocks,entity, mapX, mapY, this.distance(player.x,player.y,entity.x,entity.y),
-                            this.calculateSpriteSample(entity,angle),
-                            this.calculateSpriteSampleWidth(entity,angle,prevAngle),
-                            world.getLightColour(mapX,mapY))
+                    if(entity.sprite) {
+                        const sample = this.calculateSpriteSample(entity, angle)
+                        const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
+                        if(sample && sampleWidth)
+                            pushBlocks(blocks, entity, mapX, mapY, this.distance(player.x, player.y, entity.x, entity.y),
+                                sample, sampleWidth,world.getLightColour(mapX, mapY))
+                    }
                 })
             }
 
@@ -455,7 +469,8 @@ class view {
         let rays = this.getRays()
         this.clearScreen()
         this.renderScene(rays)
-        this.renderMinimap(rays);
+        if(MINIMAP)
+            this.renderMinimap(rays);
     }
 
     getRays() {
