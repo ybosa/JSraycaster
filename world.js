@@ -77,10 +77,11 @@ class World{
     }
 
     placeLight(light){
-        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),Math.floor(light.radius/CELL_SIZE) , new Map())
+        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),Math.floor(light.radius/CELL_SIZE) , new Set())
     }
 
     placeLightHelper(light,mapX,mapY,i,visited){
+        //FIXME DEBUG THE BOUNDY AND STOPPING CONDITIONS
         if(!light || i < 0 || this.outOfMapBounds(mapX,mapY) ||
             !this.map[mapY][mapX].transparent  )return
 
@@ -93,7 +94,7 @@ class World{
                 visited[mapY + "," + mapX] = i
             }
         }
-        else if(this.lightMap[mapY][mapX].lights.includes(light)){}
+        else if(this.lightMap[mapY][mapX].lights.includes(light)){return;}
         else {
             let lights =this.lightMap[mapY][mapX].lights
             lights.push(light)
@@ -115,7 +116,11 @@ class World{
     getEntities(mapX, mapY){
         let x = Math.floor(mapX)
         let y = Math.floor(mapY)
-
+        if(this.entities[x+","+y] && this.entities[x+","+y].length > 1 ) {
+            this.entities[mapX + "," + mapY].sort((a, b) =>
+                ((player.x - a.x) * (player.x - a.x) + (player.y - a.y) * (player.y - a.y) )-
+                ((player.x - b.x) * (player.x - b.x) + (player.y - b.y) * (player.y - b.y)))
+        }
         return this.entities[x+","+y]
     }
 
