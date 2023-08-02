@@ -117,7 +117,7 @@ function generateDemoMap(world){
     world.placeLight(new Light(28*CELL_SIZE,16*CELL_SIZE,8*CELL_SIZE,[0,0,200,0.25],2))
 
     //starting area
-    drawRow(map,ABYSS,9,0,5)
+    drawRow(map,ABYSS,9,1,5)
     drawRow(map,ABYSS,20,0,5)
     drawCol(map,ABYSS,5,9,20)
     let stoneTile = new FloorAndCeiling()

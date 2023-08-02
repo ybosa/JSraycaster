@@ -18,6 +18,24 @@ class Controller{
             if (e.key === "ArrowLeft") {
                 player.sidewaysSpeed = -2*CELL_SIZE;
             }
+            //FIXME remove these
+            if (e.key === "i") {
+                if(!DEBUG_MODE){
+                    viewer.changeNumRays(100)
+                    MINIMAP = true
+                }
+                else {
+                    viewer.changeNumRays(MAX_RAYS)
+                    MINIMAP = false
+                }
+                DEBUG_MODE = !DEBUG_MODE
+            }
+            if (e.key === "p") {
+                if(viewer.numberOfRays === MAX_RAYS/2)
+                    viewer.changeNumRays(MAX_RAYS)
+                else
+                    viewer.changeNumRays(MAX_RAYS/2)
+            }
         });
 
         document.addEventListener("keyup", (e) => {

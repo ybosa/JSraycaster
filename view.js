@@ -44,6 +44,11 @@ class view {
 
     }
 
+    changeNumRays(number){
+        this.numberOfRays = number
+        this.distanceBetweenRaysOnScreen = 2*Math.tan(FOV/2) / this.numberOfRays
+    }
+
     clearScreen() {
         this.context.fillStyle = COLORS.floor;
         this.context.fillRect(0, this.SCREEN_HEIGHT / 2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT / 2);
