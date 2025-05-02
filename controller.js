@@ -36,6 +36,9 @@ class Controller{
                 else
                     viewer.changeNumRays(MAX_RAYS/2)
             }
+            if (e.key === "o") {
+                viewer.changeNumRays(viewer.numberOfRays /2)
+            }
         });
 
         document.addEventListener("keyup", (e) => {

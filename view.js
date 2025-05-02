@@ -290,11 +290,23 @@ class view {
         //process image sampling
         let sampleImageHorizontal = Math.abs(Math.floor(useful.horizontalSample * img.width))
         let sampleImageHorizontalWidth = Math.abs(Math.floor(useful.hSampleWidth * img.width))
-        sampleImageHorizontal = Math.floor(sampleImageHorizontal + sampleImageHorizontalWidth / 2)
-        if (sampleImageHorizontalWidth <= 1) {
-            sampleImageHorizontalWidth = 1
-        } else if (sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
-        else if (sampleImageHorizontal <= 0) sampleImageHorizontal = 0
+
+        //boundry conds
+
+        if(sampleImageHorizontalWidth === 0) sampleImageHorizontalWidth = 1;
+        if(sampleImageHorizontal < 0) sampleImageHorizontal = 0;
+
+        if(sampleImageHorizontalWidth > img.width) sampleImageHorizontalWidth = img.width;
+        if(sampleImageHorizontal > img.width) sampleImageHorizontal = img.width;
+        if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontalWidth = img.width - sampleImageHorizontal;
+
+        //
+        //
+        //
+        // if (sampleImageHorizontalWidth <= 1) {
+        //     sampleImageHorizontalWidth = 1
+        // } else if (sampleImageHorizontalWidth + sampleImageHorizontal > img.width) sampleImageHorizontal = img.width - sampleImageHorizontalWidth
+        // else if (sampleImageHorizontal <= 0) sampleImageHorizontal = 0
 
         //fix overdrawing ray bounds
         let drawStart = Math.floor(i *pixelWidth)
@@ -380,7 +392,7 @@ class view {
     }
 
     getCollision(angle,prevAngle) {
-        let right = Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2); //facing right
+        let right = Boolean(Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2)); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
 
         const deltaDistX = Math.abs(CELL_SIZE / Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
@@ -443,7 +455,16 @@ class view {
                 //only bother to sample textures for walls
                 if(this.map[mapY][mapX].wall){
                     horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
-                    hSampleWidth = this.calcImageSampleWidth(distance, angle, Math.cos);
+
+                    const addAHwall = ((vertical && !right)) ? 1 : 0
+                    const addAVwall = (!vertical && !up) ? 1 : 0
+
+
+                    let angleStep = FOV / this.numberOfRays
+                    let nextDistance = (vertical) ? (( CELL_SIZE *  (mapX + addAHwall) - player.x) / Math.cos(angle + angleStep))  : (CELL_SIZE *  (mapY+addAVwall) - player.y) / Math.cos(angle + angleStep- Math.PI / 2)
+                    let NextHorizontalSample = (vertical) ? this.calcSample(vertical, nextDistance, angle+ angleStep, mapY,right,up) : this.calcSample(vertical, nextDistance, angle+ angleStep, mapX,right,up);
+                    hSampleWidth = NextHorizontalSample - horizontalSample;
+
                     //light level illuminating this non-transparent block is from previous one
                     if(!this.map[mapY][mapX].transparent)
                         light = blocks[blocks.length -1].light
