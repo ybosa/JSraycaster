@@ -218,8 +218,8 @@ class bed extends Sprite{
 class tree extends Sprite{
     constructor(x, y, world) {
         super(x, y);
-        this.width = CELL_SIZE
-        this.height =2.25 * CELL_SIZE
+        this.width = 2
+        this.height = 4.5
         this.imageName = "tree.png"
         this.placeSprite(world)
     }

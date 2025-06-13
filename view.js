@@ -139,8 +139,7 @@ class view {
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
                     let drawWidth = Math.floor(nextDrawHorizStart - drawHorizStart)
 
-                    let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
-                    let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
+                    const wallHeight = this.wallHeightPix(useful.distance,ray.angle,player.angle) //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
                     if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
@@ -282,8 +281,7 @@ class view {
 
     drawWall(ray, i, useful) {
         let block = useful.block
-        let perpDistance = fixFishEye(useful.distance, ray.angle, player.angle);//[m] dist to wall
-        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        const wallHeight = this.wallHeightPix(useful.distance,ray.angle,player.angle) //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.imageName)
 
@@ -333,9 +331,8 @@ class view {
 
     drawSprite(ray, i, useful){
         let sprite = useful.block
-        let perpDistance = useful.distance//[m] ignore perpendicular distance for sprites
-        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
-        let spriteHeight = this.SCREEN_HEIGHT / perpDistance * sprite.height //[px]height of wall
+        const wallHeight = this.wallHeightPixNoFishEyeCorrection(useful.distance) //[px] height of an imaginary wall at the same location as this chunk of the sprite, note this can be anywhere on the grid! or any angle
+        let spriteHeight = this.SCREEN_HEIGHT / useful.distance * sprite.height  //[px] height of sprite
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(sprite.imageName)
 
@@ -351,17 +348,17 @@ class view {
         if(sampleImageHorizontalWidth + sampleImageHorizontal > img.width)return;
 
         //fix overdrawing ray bounds
-        let drawStart = Math.floor(i *pixelWidth)
-        let nextDrawStart = Math.floor((i+1) *pixelWidth)
-        let drawWidth = Math.floor(nextDrawStart - drawStart)
+        let drawHorizStart = Math.floor(i *pixelWidth)
+        let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawHorizStart - drawHorizStart)
 
         this.context.drawImage(img, sampleImageHorizontal,
             0, sampleImageHorizontalWidth, img.height,
-            drawStart, this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, drawWidth, Math.floor(spriteHeight)+2)
+            drawHorizStart, this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, drawWidth, Math.floor(spriteHeight)+2)
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'white';
-            this.context.strokeRect( drawStart, this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, drawWidth, Math.floor(spriteHeight)+2);
+            this.context.strokeRect( drawHorizStart, this.SCREEN_HEIGHT / 2 + wallHeight/2 - spriteHeight-1, drawWidth, Math.floor(spriteHeight)+2);
         }
     }
 
@@ -541,6 +538,31 @@ class view {
 
     distance(x1, y1, x2, y2) {
         return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
+
+    /**
+     * Calculates the pixel height on the screen for a section of wall at a given distance and angle
+     * And corrects for fish eye
+     * @param distance from camera to wall
+     * @param rayAngle absolute angle of the ray
+     * @param playerAngle angle camera is facing
+     * @returns {number} how many pixels tall the wall segment is
+     */
+    wallHeightPix(distance,rayAngle,playerAngle){
+        let perpDistance = fixFishEye(distance, rayAngle, playerAngle);//[m] dist to wall
+         //[px]height of wall
+        return CELL_SIZE * this.SCREEN_HEIGHT / perpDistance;
+    }
+
+    /**
+     * Calculates the pixel height on the screen for a section of wall at a given distance and angle
+     * And DOES NOT correct for fish eye - useful for sprites
+     * @param distance from camera to wall / sprite
+     * @returns {number} how many pixels tall the wall segment is
+     */
+    wallHeightPixNoFishEyeCorrection(distance){
+         //[px]height of wall
+        return CELL_SIZE * this.SCREEN_HEIGHT / distance;
     }
 }
 
