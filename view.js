@@ -1,3 +1,8 @@
+"use strict"
+import {CELL_SIZE, DEBUG_MODE, IMAGE_PATH, MAX_RAY_DEPTH, MAX_RAYS, MINIMAP} from "./config.js";
+import {ABYSS} from "./block.js";
+import Light from "./light.js";
+
 let COLORS = {
     floor: "#376707", // "#ff6361"
     ceiling: "#7ccecc", // "#012975",
@@ -58,7 +63,7 @@ class view {
 
     renderMinimap(rays) {
         let posX = 0, posY = 0;
-        let screenPortion = 1 / 4 //portion of screen covered
+        let screenPortion = 1 / 4 //portion of the screen covered
         let scale = this.SCREEN_WIDTH / (this.map.length * CELL_SIZE) * screenPortion  //[px/m] meters to pixels
         let cellSize = scale * CELL_SIZE; //[px] pixels each cell takes up
         this.map.forEach((row, y) => {
@@ -67,7 +72,7 @@ class view {
 
 
                 if(cell.floor){
-                    this.context.fillStyle =colourToRGBA( applyLightColourToBlock(cell.floorColour,this.world.getLightColour(x,y)))
+                    this.context.fillStyle =Light.colourToRGBA( Light.applyLightColourToBlock(cell.floorColour,this.world.getLightColour(x,y)))
                     this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
                 }
                 else if(cell.wall)
@@ -76,18 +81,18 @@ class view {
         });
         this.context.fillStyle = "blue";
         this.context.fillRect(
-            posX + player.x * scale - 10 / 2,
-            posY + player.y * scale - 10 / 2,
+            posX + this.player.x * scale - 10 / 2,
+            posY + this.player.y * scale - 10 / 2,
             10,
             10
         );
 
         this.context.strokeStyle = "blue";
         this.context.beginPath();
-        this.context.moveTo(player.x * scale, player.y * scale);
+        this.context.moveTo(this.player.x * scale, this.player.y * scale);
         this.context.lineTo(
-            (player.x + Math.cos(player.angle) * 20) * scale,
-            (player.y + Math.sin(player.angle) * 20) * scale
+            (this.player.x + Math.cos(this.player.angle) * 20) * scale,
+            (this.player.y + Math.sin(this.player.angle) * 20) * scale
         );
         this.context.closePath();
         this.context.stroke();
@@ -95,10 +100,10 @@ class view {
         this.context.strokeStyle = COLORS.rays;
         rays.forEach((ray) => {
             this.context.beginPath();
-            this.context.moveTo(player.x * scale, player.y * scale);
+            this.context.moveTo(this.player.x * scale, this.player.y * scale);
             this.context.lineTo(
-                (player.x + Math.cos(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale,
-                (player.y + Math.sin(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale
+                (this.player.x + Math.cos(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale,
+                (this.player.y + Math.sin(ray.angle) * ray.blocks[ray.blocks.length -1].distance) * scale
             );
             this.context.closePath();
             this.context.stroke();
@@ -106,7 +111,7 @@ class view {
     }
 
     renderScene(rays) {
-        this.drawSkybox(getImage(world.sky))
+        this.drawSkybox(getImage(this.world.sky))
         const pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         //render rays
         rays.forEach((ray, i) => {
@@ -139,10 +144,10 @@ class view {
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
                     let drawWidth = Math.floor(nextDrawHorizStart - drawHorizStart)
 
-                    let distWall = fixFishEye(useful.distance, ray.angle, player.angle)
+                    let distWall = fixFishEye(useful.distance, ray.angle, this.player.angle)
                     let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
-                    let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
+                    let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, this.player.angle)/2)
                     if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
 
                     let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
@@ -169,7 +174,7 @@ class view {
                     //draw debug grid
                     if (DEBUG_MODE) {
                         //DRAW THE FLOOR BLOCK
-                        //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
+                        //activate skip draw, don't skip when j == 0, or when the next block is not a floor, so we don't get missed draws
                         if(!skipDrawFloor && !block.wall && noLightColourDiff && block.floor && block.floorColour === nextBlockFloorColour && j!==0){
                             skipDrawFloorLine =drawStart
                             skipDrawFloor = true
@@ -220,13 +225,13 @@ class view {
                             //draw skipped lines
                             if (skipDrawFloor) {
                                 skipDrawFloor = false
-                                    this.context.fillStyle = colourToRGBA( applyLightColourToBlock(skipDrawFloorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
+                                    this.context.fillStyle = Light.colourToRGBA( Light.applyLightColourToBlock(skipDrawFloorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
                                     this.context.fillRect(drawHorizStart, skipDrawFloorLine, drawWidth, drawStart - skipDrawFloorLine + 1);
                                 skipDrawFloorCount = 0;
                             }
                             //draw large tile
                             if (block.floor) {
-                                this.context.fillStyle = colourToRGBA(applyLightColourToBlock(block.floorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
+                                this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.floorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
                                 this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
                             }
                         }
@@ -257,13 +262,13 @@ class view {
                             let drawDist = skipDrawCeilingCount
                             skipDrawCeiling = false
 
-                            this.context.fillStyle = colourToRGBA(applyLightColourToBlock(skipDrawCeilingColour,this.world.getLightColour(useful.mapX,useful.mapY)));
+                            this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(skipDrawCeilingColour,this.world.getLightColour(useful.mapX,useful.mapY)));
                             this.context.fillRect(drawHorizStart, ceilingStart, drawWidth,  drawDist+1);
 
                             skipDrawCeilingCount =0;
                         }
                         if(block.ceiling) {
-                            this.context.fillStyle = colourToRGBA(applyLightColourToBlock(block.ceilingColour,this.world.getLightColour(useful.mapX,useful.mapY)))
+                            this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.ceilingColour,this.world.getLightColour(useful.mapX,useful.mapY)))
                             this.context.fillRect(drawHorizStart, this.SCREEN_HEIGHT - drawStart - drawDist, drawWidth, drawDist + 1);
                         }
                     }
@@ -282,7 +287,7 @@ class view {
 
     drawWall(ray, i, useful) {
         let block = useful.block
-        let perpDistance = fixFishEye(useful.distance, ray.angle, player.angle);//[m] dist to wall
+        let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.imageName)
@@ -367,15 +372,15 @@ class view {
 
     calculateSpriteSample(sprite,rayAngle){
         //Can be greater than 2pi
-        let playerWithSpriteAngle = Math.atan2((sprite.y-player.y),(sprite.x-player.x)) -player.angle
-        rayAngle = rayAngle -player.angle
+        let playerWithSpriteAngle = Math.atan2((sprite.y-this.player.y),(sprite.x-this.player.x)) -this.player.angle
+        rayAngle = rayAngle -this.player.angle
 
 
 
         //FIXME drawing sprites when behind player
         //FIXME not drawing sides of  sprites when close to player
 
-        return 1/2 + this.distance(player.x,player.y,sprite.x,sprite.y)/sprite.width*
+        return 1/2 + this.distance(this.player.x,this.player.y,sprite.x,sprite.y)/sprite.width*
             (Math.cos(playerWithSpriteAngle)* Math.tan(rayAngle ) - Math.sin(playerWithSpriteAngle) )
     }
 
@@ -398,19 +403,19 @@ class view {
         const deltaDistX = Math.abs(CELL_SIZE / Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
         const deltaDistY = Math.abs(CELL_SIZE / Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
 
-        let sideDistX = (right) ? CELL_SIZE * (Math.floor(player.x / CELL_SIZE) + 1 - player.x / CELL_SIZE) / Math.cos(angle) : CELL_SIZE * (Math.floor(player.x / CELL_SIZE) - player.x / CELL_SIZE) / Math.cos(angle)//distance to the next vertical wall
+        let sideDistX = (right) ? CELL_SIZE * (Math.floor(this.player.x / CELL_SIZE) + 1 - this.player.x / CELL_SIZE) / Math.cos(angle) : CELL_SIZE * (Math.floor(this.player.x / CELL_SIZE) - this.player.x / CELL_SIZE) / Math.cos(angle)//distance to the next vertical wall
         sideDistX = Math.abs(sideDistX)
-        let sideDistY = (up) ? CELL_SIZE * (Math.floor(player.y/ CELL_SIZE) + 1 - player.y/ CELL_SIZE) / Math.sin(angle) :CELL_SIZE * (Math.floor(player.y/CELL_SIZE) - player.y/CELL_SIZE) / Math.sin(angle)   //distance to the next horizontal wall
+        let sideDistY = (up) ? CELL_SIZE * (Math.floor(this.player.y/ CELL_SIZE) + 1 - this.player.y/ CELL_SIZE) / Math.sin(angle) :CELL_SIZE * (Math.floor(this.player.y/CELL_SIZE) - this.player.y/CELL_SIZE) / Math.sin(angle)   //distance to the next horizontal wall
         sideDistY = Math.abs(sideDistY)
-        let mapX = Math.floor(player.x / CELL_SIZE) //grid cell player is in x coord
-        let mapY = Math.floor(player.y / CELL_SIZE) //grid cell player is in y coord
+        let mapX = Math.floor(this.player.x / CELL_SIZE) //grid cell player is in x coord
+        let mapY = Math.floor(this.player.y / CELL_SIZE) //grid cell player is in y coord
 
         //step forward rays
 
         let distance = 0;
         let count = 0
         let blocks = [] //set of all the blocks visited by the ray
-        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,world.getLightColour(mapX,mapY)) //can ignore sampling value on block you are standing in, assuming its not a wall
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,this.world.getLightColour(mapX,mapY)) //can ignore sampling value on block you are standing in, assuming its not a wall
         while (count <= MAX_RAY_DEPTH) {
             count++;
             let vertical = sideDistX < sideDistY;
@@ -425,7 +430,7 @@ class view {
                 mapY += (up) ? 1 : -1;
             }
             //check if out of bounds
-            if (world.outOfMapBounds(mapX, mapY)) {
+            if (this.world.outOfMapBounds(mapX, mapY)) {
                 let block = ABYSS
                 blocks.push({block, distance})
                 return {
@@ -435,14 +440,14 @@ class view {
             }
 
             //not out of bounds so add sprite to array if it exists
-            if(world.getEntities(mapX,mapY) && world.getEntities(mapX,mapY).length > 0 ){
-                world.getEntities(mapX,mapY).forEach((entity) =>{
+            if(this.world.getEntities(mapX,mapY) && this.world.getEntities(mapX,mapY).length > 0 ){
+                this.world.getEntities(mapX,mapY).forEach((entity) =>{
                     if(entity.sprite) {
                         const sample = this.calculateSpriteSample(entity, angle)
                         const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
                         if(sample && sampleWidth)
-                            pushBlocks(blocks, entity, mapX, mapY, this.distance(player.x, player.y, entity.x, entity.y),
-                                sample, sampleWidth,world.getLightColour(mapX, mapY))
+                            pushBlocks(blocks, entity, mapX, mapY, this.distance(this.player.x, this.player.y, entity.x, entity.y),
+                                sample, sampleWidth,this.world.getLightColour(mapX, mapY))
                     }
                 })
             }
@@ -451,7 +456,7 @@ class view {
             if (!this.map[mapY][mapX].invisible) {
                 let horizontalSample = 0;
                 let hSampleWidth  = 0;
-                let light = world.getLightColour(mapX,mapY)
+                let light = this.world.getLightColour(mapX,mapY)
                 //only bother to sample textures for walls
                 if(this.map[mapY][mapX].wall){
                     horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
@@ -461,7 +466,7 @@ class view {
 
 
                     let angleStep = FOV / this.numberOfRays
-                    let nextDistance = (vertical) ? (( CELL_SIZE *  (mapX + addAHwall) - player.x) / Math.cos(angle + angleStep))  : (CELL_SIZE *  (mapY+addAVwall) - player.y) / Math.cos(angle + angleStep- Math.PI / 2)
+                    let nextDistance = (vertical) ? (( CELL_SIZE *  (mapX + addAHwall) - this.player.x) / Math.cos(angle + angleStep))  : (CELL_SIZE *  (mapY+addAVwall) - this.player.y) / Math.cos(angle + angleStep- Math.PI / 2)
                     let NextHorizontalSample = (vertical) ? this.calcSample(vertical, nextDistance, angle+ angleStep, mapY,right,up) : this.calcSample(vertical, nextDistance, angle+ angleStep, mapX,right,up);
                     hSampleWidth = NextHorizontalSample - horizontalSample;
 
@@ -485,7 +490,7 @@ class view {
 
     calcSample(vertical, distance, angle, mapQ,right,up) {
         const inv = (!vertical) ? up : !right
-        const sample = (vertical) ? (distance * Math.sin(angle) + player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + player.x) / CELL_SIZE - mapQ
+        const sample = (vertical) ? (distance * Math.sin(angle) + this.player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + this.player.x) / CELL_SIZE - mapQ
 
         return (inv) ? 1- sample : sample
     }
@@ -500,7 +505,7 @@ class view {
     }
 
     getRays() {
-        let initialAngle = player.angle
+        let initialAngle = this.player.angle
         let prevAngle = initialAngle
         // let angleStep = FOV / this.numberOfRays;
         return Array.from({length: this.numberOfRays}, (_, i) => {
@@ -520,7 +525,7 @@ class view {
     }
 
     drawSkybox(img) {
-        let rotation = player.angle / (2 * Math.PI) - Math.floor(player.angle / (2 * Math.PI)) //btw 0 and 1
+        let rotation = this.player.angle / (2 * Math.PI) - Math.floor(this.player.angle / (2 * Math.PI)) //btw 0 and 1
 
         let sXStart = rotation * img.width //[px]
         let sXWidth = FOV / (2 * Math.PI) * img.width          //[px]
@@ -569,7 +574,7 @@ class view {
     }
 }
 
-function toRadians(deg) {
+export function toRadians(deg) {
     return (deg * Math.PI) / 180;
 }
 
@@ -633,3 +638,5 @@ function arraysEqual(a,b){
     }
     return true;
 }
+
+export default view

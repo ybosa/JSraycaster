@@ -1,4 +1,8 @@
-class Sprite extends Entity{
+"use strict";
+import Entity from "./entity.js";
+import {CELL_SIZE} from "./config.js";
+
+export default class Sprite extends Entity{
     sprite = true //caster and renderer treat sprites as 2d objects not blocks
     imageName = "missing.png"
     width  = 2 //[m] physical width of sprite
@@ -20,7 +24,6 @@ class Sprite extends Entity{
                 for (let x = -cellRadius; x <= cellRadius; x++){
                     if(world.outOfMapBounds(mapX+x,mapY+y) || (x) * (x) + (y)*(y) >= cellRadius2 ) {}
                     world.putEntityCoords(this,mapX+x,mapY+y)
-
 
                 }
             }

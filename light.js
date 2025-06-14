@@ -1,4 +1,6 @@
-class Light extends Entity {
+"use strict";
+import Entity from "./entity.js";
+export class Light extends Entity {
     radius; //[m] radius of light
     colour; // array of [r,g,b,b], FINAL b is transparency, stands in for brightness (rgba format)
     decay;  //rate of decay exponent
@@ -83,3 +85,5 @@ function applyLightColourToBlock(block,light){
 function colourToRGBA(colour){
     return 'rgba('+colour[0]+','+colour[1]+','+colour[2]+','+colour[3]+')'
 }
+
+export default {Light,averageColourValues,applyLightColourToBlock,colourToRGBA}

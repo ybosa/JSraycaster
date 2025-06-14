@@ -1,3 +1,6 @@
+"use strict";
+import {GAME_TICK_RATE} from "./config.js";
+
 class Player{
     x; //[m] x pos
     y; //[m] y pos
@@ -25,3 +28,5 @@ class Player{
         this.sidewaysSpeed = 0;
     }
 }
+
+export default Player

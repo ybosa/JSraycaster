@@ -1,3 +1,8 @@
+"use strict";
+import {Block,FloorAndCeiling,Glass,Air, ABYSS} from "./block.js";
+import {CELL_SIZE} from "./config.js";
+import LIGHT, {Light} from "./light.js";
+
 class World{
     map;
     lightMap; // contains an object of {colour value , [array of light sources]}
@@ -5,14 +10,14 @@ class World{
     entities = new Set();
 
     //TODO IMPLEMENT ENTITY COLLISION
-    collides(x,y){
+    collides(x,y,player){
         let mapX = Math.floor(x / CELL_SIZE)
         let mapY = Math.floor(y / CELL_SIZE)
 
         //check entity collision
-        if(this.getEntities(mapX,mapY)) {
-            for (let i = 0; i < this.getEntities(mapX, mapY).length; i++) {
-                let entity = this.getEntities(mapX, mapY)[i]
+        if(this.getEntities(mapX,mapY,player)) {
+            for (let i = 0; i < this.getEntities(mapX, mapY,player).length; i++) {
+                let entity = this.getEntities(mapX, mapY,player)[i]
                 if (!entity.passable && (Math.pow(entity.x - x, 2) + Math.pow(entity.y - y, 2)) <= entity.width * entity.width)
                     return true
             }
@@ -81,7 +86,7 @@ class World{
     }
 
     placeLightHelper(light,mapX,mapY,i,visited){
-        //FIXME DEBUG THE BOUNDY AND STOPPING CONDITIONS
+        //FIXME DEBUG THE BOUNDARY AND STOPPING CONDITIONS
         if(!light || i < 0 || this.outOfMapBounds(mapX,mapY) ||
             !this.map[mapY][mapX].transparent  )return
 
@@ -98,7 +103,7 @@ class World{
         else {
             let lights =this.lightMap[mapY][mapX].lights
             lights.push(light)
-            let colour = averageColourValues(lights,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
+            let colour = LIGHT.averageColourValues(lights,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
             this.lightMap[mapY][mapX] = {colour,lights}
             visited[ mapY+","+mapX] =i
         }
@@ -113,11 +118,11 @@ class World{
         else return null
     }
 
-    getEntities(mapX, mapY){
+    getEntities(mapX, mapY,player){
         let x = Math.floor(mapX)
         let y = Math.floor(mapY)
         if(this.entities[x+","+y] && this.entities[x+","+y].length > 1 ) {
-            this.entities[mapX + "," + mapY].sort((a, b) =>
+            this.entities[mapX + "," + mapY].sort((a, b) => //FIXME WHY IS THIS HERE, IS IT NEEDED?
                 ((player.x - a.x) * (player.x - a.x) + (player.y - a.y) * (player.y - a.y) )-
                 ((player.x - b.x) * (player.x - b.x) + (player.y - b.y) * (player.y - b.y)))
         }
@@ -160,3 +165,6 @@ class World{
         this.genEntities()
     }
 }
+
+
+export default World
