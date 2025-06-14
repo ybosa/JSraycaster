@@ -542,6 +542,31 @@ class view {
     distance(x1, y1, x2, y2) {
         return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     }
+
+    /**
+     * Calculates the pixel height on the screen for a section of wall at a given distance and angle
+     * And corrects for fish eye
+     * @param distance from camera to wall
+     * @param rayAngle absolute angle of the ray
+     * @param playerAngle angle camera is facing
+     * @returns {number} how many pixels tall the wall segment is
+     */
+    wallHeightPix(distance,rayAngle,playerAngle){
+        let perpDistance = fixFishEye(distance, rayAngle, playerAngle);//[m] dist to wall
+        //[px]height of wall
+        return CELL_SIZE * this.SCREEN_HEIGHT / perpDistance;
+    }
+
+    /**
+     * Calculates the pixel height on the screen for a section of wall at a given distance and angle
+     * And DOES NOT correct for fish eye - useful for sprites
+     * @param distance from camera to wall / sprite
+     * @returns {number} how many pixels tall the wall segment is
+     */
+    wallHeightPixNoFishEyeCorrection(distance){
+        //[px]height of wall
+        return CELL_SIZE * this.SCREEN_HEIGHT / distance;
+    }
 }
 
 function toRadians(deg) {
