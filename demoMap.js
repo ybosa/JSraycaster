@@ -68,16 +68,13 @@ function generateDemoMap(world){
     fillArea(map,gravelFloor,7,19,25,32)
 
 
-    let pillar = new Block()
-    pillar.imageName = 'pillar.png'
+    let pillar = new Air()
     drawPerim(map,ABYSS,4,22,20,35)
     map[21][5] = stoneWall; map[21][21] = stoneWall;
     fillAltArea(map,null,pillar,8,18,22,22)
 
     let leaves = new Block()
-    leaves.wall = true
-    leaves.transparent = true
-    leaves.imageName = 'leaves.png'
+   
     drawPerim(map,leaves,7,19,25,32)
     drawCol(map,leaves,9,27,30)
     drawCol(map,leaves,13,27,30)

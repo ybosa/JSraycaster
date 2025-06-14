@@ -72,6 +72,12 @@ class view {
                 }
                 else if(cell.wall)
                     this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
+
+                if(FloorToDraw && FloorToDraw.x === x && FloorToDraw.y === y) {
+                    this.context.fillStyle = "pink"
+                    this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
+                }
+
             });
         });
         this.context.fillStyle = "blue";
@@ -93,7 +99,7 @@ class view {
         this.context.stroke();
 
         this.context.strokeStyle = COLORS.rays;
-        rays.forEach((ray) => {
+        /*rays.forEach((ray) => {
             this.context.beginPath();
             this.context.moveTo(player.x * scale, player.y * scale);
             this.context.lineTo(
@@ -102,19 +108,19 @@ class view {
             );
             this.context.closePath();
             this.context.stroke();
-        });
+        });*/
     }
 
     renderScene(rays) {
         this.drawSkybox(getImage(world.sky))
         const pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+
+        if(FloorToDraw) {
+            this.drawATexturedFloor( FloorToDraw.y,FloorToDraw.x);
+        }
         //render rays
         rays.forEach((ray, i) => {
             //floor drawing variables
-            let skipDrawFloorLine = this.SCREEN_HEIGHT/2
-            let skipDrawFloor = false
-            let skipDrawFloorCount =0
-            let skipDrawFloorColour = null
             //ceiling drawing variables
             let skipDrawCeilingLine = 0
             let skipDrawCeiling = false
@@ -142,7 +148,7 @@ class view {
                     const wallHeight = this.wallHeightPix(useful.distance,ray.angle,player.angle) //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, player.angle)/2)
-                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
+                    if(drawStart > this.SCREEN_HEIGHT) return
 
                     let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
@@ -167,69 +173,24 @@ class view {
                     //DRAW THE FLOOR BLOCK
                     //draw debug grid
                     if (DEBUG_MODE) {
-                        //DRAW THE FLOOR BLOCK
-                        //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        if(!skipDrawFloor && !block.wall && noLightColourDiff && block.floor && block.floorColour === nextBlockFloorColour && j!==0){
-                            skipDrawFloorLine =drawStart
-                            skipDrawFloor = true
-                            skipDrawFloorCount += drawDist;
-                            skipDrawFloorColour = block.floorColour
-
-                        }
-                        //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        //stop when current block is a wall (eg glass) so we dont overdraw the block
-                        else if(skipDrawFloor && !block.wall && noLightColourDiff && j!==0 && block.floor && block.floorColour === skipDrawFloorColour){
-                            skipDrawFloorCount += drawDist;
-                        }
-                        //end skipDraw
-                        else {
-                            //draw skipped lines
-                            if(skipDrawFloor){
-                                skipDrawFloor = false
-                                    this.context.strokeStyle = 'blue';
-                                    this.context.strokeRect(drawHorizStart, skipDrawFloorLine, drawWidth,  drawStart - skipDrawFloorLine+1);
-                                skipDrawFloorCount =0;
-                            }
-                            //draw tile
-                            if (block.floor) {
-                                this.context.strokeStyle = 'yellow';
-                                this.context.strokeRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
-                            }
-
-
+                        //draw tile
+                        if (block.floor) {
+                            this.context.strokeStyle = 'yellow';
+                            this.context.strokeRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
                         }
                     }
                     //otherwise, draw floor regularly
                     else {
-                        //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        if (!skipDrawFloor && !block.wall && noLightColourDiff && block.floor && block.floorColour === nextBlockFloorColour && j!==0) {
-                            skipDrawFloorLine = drawStart
-                            skipDrawFloor = true
-                            skipDrawFloorCount += drawDist;
-                            skipDrawFloorColour = block.floorColour
+                        if(FloorToDraw && FloorToDraw.x === useful.mapX && FloorToDraw.y === useful.mapY) {
+                        }
+                        //draw large tile
+                        else if (block.floor) {
+                            this.context.fillStyle = colourToRGBA(applyLightColourToBlock(block.floorColour, this.world.getLightColour(useful.mapX, useful.mapY)));
+                            this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
+                        }
 
-                        }
-                        //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
-                            //stop when current block is a wall (eg glass) so we dont overdraw the block
-                        else if (skipDrawFloor && !block.wall && noLightColourDiff && j!==0 && block.floor && block.floorColour === skipDrawFloorColour) {
-                            skipDrawFloorCount += drawDist;
-                        }
-                        //end skipDraw
-                        else {
-                            //draw skipped lines
-                            if (skipDrawFloor) {
-                                skipDrawFloor = false
-                                    this.context.fillStyle = colourToRGBA( applyLightColourToBlock(skipDrawFloorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
-                                    this.context.fillRect(drawHorizStart, skipDrawFloorLine, drawWidth, drawStart - skipDrawFloorLine + 1);
-                                skipDrawFloorCount = 0;
-                            }
-                            //draw large tile
-                            if (block.floor) {
-                                this.context.fillStyle = colourToRGBA(applyLightColourToBlock(block.floorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
-                                this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
-                            }
-                        }
                     }
+
 
 
 
@@ -563,6 +524,45 @@ class view {
     wallHeightPixNoFishEyeCorrection(distance){
          //[px]height of wall
         return CELL_SIZE * this.SCREEN_HEIGHT / distance;
+    }
+
+
+    drawATexturedFloor(MapY,MapX){
+        const block = this.map[MapY][MapX]
+        const image = getImage("rubble.png");
+
+        for (let wq = 0; wq<image.width; wq++) {
+            for (let hq = 0; hq<image.height; hq++) {
+                const {i,j} = this.worldCordToScreenCord(this.tileFloorTexturePixToWorldCord(wq,hq,image,MapY,MapX))
+                this.context.drawImage(image,wq,hq,1,1,i,j,50,50);
+            }
+        }
+
+
+    }
+
+    tileFloorTexturePixToWorldCord(wq,hq,image,MapY,MapX){
+        const x = (MapX + wq/image.width) * CELL_SIZE;
+        const y = (MapY + hq/image.height) * CELL_SIZE;
+        return {x,y};
+    }
+
+    worldCordToScreenCord({x,y}){
+
+        //convert from position (x,y) to position(theta, distance)
+        const distance = this.distance(x,y,player.x,player.y)
+        const angle = Math.atan2(y-player.y,x-player.x)
+
+        //convert from position(theta, distance) to screen postion(i,j)
+        let alpha =  (angle - player.angle + FOV/2)
+
+
+
+        let i = alpha/FOV * this.SCREEN_WIDTH
+
+
+        const j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, player.angle)/2)
+        return {i,j}
     }
 }
 

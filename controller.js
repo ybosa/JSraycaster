@@ -6,6 +6,16 @@ class Controller{
         });
 
         document.addEventListener("keydown", (e) => {
+            if(e.key === "y"){
+                if(FloorToDraw === undefined) FloorToDraw = {}
+                FloorToDraw.x = Math.floor(player.x / CELL_SIZE);
+                FloorToDraw.y = Math.floor(player.y / CELL_SIZE);
+
+                console.log(FloorToDraw)
+            }
+            if(e.key === "u"){
+                FloorToDraw = undefined
+            }
             if (e.key === "ArrowUp" || e.key === "w") {
                 player.speed = 5*CELL_SIZE;
             }
@@ -55,6 +65,9 @@ class Controller{
 
         document.addEventListener("mousemove", function (event) {
             player.angle += toRadians(event.movementX / 10);
+            if(player.angle > 2 * Math.PI) {player.angle = player.angle - 2 * Math.PI;}
+            if (player.angle < 0) player.angle = 2 * Math.PI + player.angle;
+
         });
 
     }
