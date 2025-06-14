@@ -1,6 +1,9 @@
-class Controller{
+"use strict";
+import {CELL_SIZE, MINIMAP, DEBUG_MODE, MAX_RAYS} from "./config.js";
+import {toRadians} from "./view.js";
 
-    constructor(player, canvas) {
+class Controller{
+    constructor(player, canvas,viewer) {
         canvas.addEventListener("click", () => {
             canvas.requestPointerLock();
         });
@@ -59,3 +62,5 @@ class Controller{
 
     }
 }
+
+export default Controller

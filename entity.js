@@ -1,4 +1,5 @@
-class Entity {
+"use strict";
+export default class Entity {
     x;
     y; //coords of entity
 

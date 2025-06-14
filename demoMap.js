@@ -1,3 +1,9 @@
+"use strict";
+import Sprite from "./sprite.js";
+import {ABYSS, Air, Block, FloorAndCeiling, Glass} from "./block.js";
+import {CELL_SIZE} from "./config.js";
+import {Light} from "./light.js";
+
 function generateDemoMap(world){
     world.entities = new Set()
     world.map = world.genMap(50,50)
@@ -224,3 +230,6 @@ class tree extends Sprite{
         this.placeSprite(world)
     }
 }
+
+
+export default generateDemoMap;
