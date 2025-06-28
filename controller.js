@@ -1,5 +1,6 @@
 "use strict";
 import {CELL_SIZE, MINIMAP, DEBUG_MODE, MAX_RAYS} from "./config.js";
+import {DEBUGVARS} from "./config.js";
 import {toRadians} from "./view.js";
 
 class Controller{
@@ -22,19 +23,19 @@ class Controller{
                 player.sidewaysSpeed = -2*CELL_SIZE;
             }
             if (e.key === "m"){
-                MINIMAP = !MINIMAP;
+                DEBUGVARS.setMinimap(!MINIMAP);
             }
             //FIXME remove these
             if (e.key === "i") {
                 if(!DEBUG_MODE){
                     viewer.changeNumRays(100)
-                    MINIMAP = true
+                    DEBUGVARS.setMinimap(true)
                 }
                 else {
                     viewer.changeNumRays(MAX_RAYS)
-                    MINIMAP = false
+                    DEBUGVARS.setMinimap(false)
                 }
-                DEBUG_MODE = !DEBUG_MODE
+                DEBUGVARS.setDebugMode(!DEBUG_MODE)
             }
             if (e.key === "p") {
                 if(viewer.numberOfRays === MAX_RAYS/2)
