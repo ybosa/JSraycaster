@@ -18,10 +18,12 @@ function generateDemoMap(world){
     let stoneFloorRoofW = new FloorAndCeiling()
     stoneFloorRoofW.ceilingColour =[200,200,200,1]
     stoneFloorRoofW.floorColour = [200,200,200,1]
+    stoneFloorRoofW.imageName = "debug.png"
 
     let stoneFloorRoofB = new FloorAndCeiling()
     stoneFloorRoofB.ceilingColour = [200,200,200,1]
     stoneFloorRoofB.floorColour = [50,50,50,1]
+    stoneFloorRoofB.imageName = "rubble.png"
 
 
     let bars = new Glass()

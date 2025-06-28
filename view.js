@@ -5,7 +5,7 @@ let COLORS = {
     wallDark: "#66686c", // "#003f5c"
     rays: "#ffa600",
 };
-let FOV = toRadians(75);
+let FOV = toRadians(90);
 
 let imageSet = new Set();
 let missingIMGSet = new Set();
@@ -73,10 +73,6 @@ class view {
                 else if(cell.wall)
                     this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
 
-                if(FloorToDraw && FloorToDraw.x === x && FloorToDraw.y === y) {
-                    this.context.fillStyle = "pink"
-                    this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
-                }
 
             });
         });
@@ -114,10 +110,41 @@ class view {
     renderScene(rays) {
         this.drawSkybox(getImage(world.sky))
         const pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+        const drawnFloors = []
+        let floorDrawCount = 0;
 
-        if(FloorToDraw) {
-            this.drawATexturedFloor( FloorToDraw.y,FloorToDraw.x);
-        }
+        rays.forEach((ray, i) => {
+
+            let previousBlock = ray.blocks[ray.blocks.length - 1]
+            for (let j = ray.blocks.length - 1; j >= 0; j--) {
+                const useful = ray.blocks[j]
+                if(drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX] ) {continue}
+                const block = useful.block
+                //ignore out of bounds or invisible blocks
+                if (block.invisible || block === ABYSS) continue
+                //draw floors and ceilings, and lack thereof (as
+                //FIXME debug entry condition to this branch, may just need to be true
+                if (block.floor && block.imageName){
+                    //draw floors
+                    if(FloorToDraw) {
+                        this.drawATexturedFloor(useful.mapY, useful.mapX);
+
+                        if(!drawnFloors[useful.mapY]){
+                            drawnFloors[useful.mapY] = []
+                        }
+                        drawnFloors[useful.mapY][useful.mapX] = true;
+
+                        floorDrawCount++;
+                    }
+                }
+
+                previousBlock = useful
+            }
+
+        });
+
+        // console.log("floorsDrawn " +floorDrawCount)
+
         //render rays
         rays.forEach((ray, i) => {
             //floor drawing variables
@@ -172,6 +199,7 @@ class view {
 
                     //DRAW THE FLOOR BLOCK
                     //draw debug grid
+
                     if (DEBUG_MODE) {
                         //draw tile
                         if (block.floor) {
@@ -180,16 +208,7 @@ class view {
                         }
                     }
                     //otherwise, draw floor regularly
-                    else {
-                        if(FloorToDraw && FloorToDraw.x === useful.mapX && FloorToDraw.y === useful.mapY) {
-                        }
-                        //draw large tile
-                        else if (block.floor) {
-                            this.context.fillStyle = colourToRGBA(applyLightColourToBlock(block.floorColour, this.world.getLightColour(useful.mapX, useful.mapY)));
-                            this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
-                        }
 
-                    }
 
 
 
@@ -529,7 +548,7 @@ class view {
 
     drawATexturedFloor(MapY,MapX){
         const block = this.map[MapY][MapX]
-        const image = getImage("rubble.png");
+        const image = getImage(block.imageName);
 
         // for (let wq = 0; wq<image.width; wq++) {
         //     for (let hq = 0; hq<image.height; hq++) {
@@ -544,8 +563,16 @@ class view {
         const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY)
         const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1)
 
+        let valid = true;
+        valid = valid && this.validateScreenCord(TL_BlockScreenCord);
+        valid = valid && this.validateScreenCord(BL_BlockScreenCord);
+        valid = valid && this.validateScreenCord(TR_BlockScreenCord);
+        valid = valid && this.validateScreenCord(BR_BlockScreenCord);
+
+        if(!valid) return
+
         //triangle
-        let pattern = ctx.createPattern(image, 'repeat');
+        const pattern = ctx.createPattern(image, 'repeat');
         ctx.beginPath();
         ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
         ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
@@ -553,9 +580,6 @@ class view {
         ctx.closePath();
         ctx.fillStyle = pattern;
         ctx.fill();
-
-        const image2 = getImage("wall.png");
-        pattern = ctx.createPattern(image2, 'repeat');
 
         ctx.beginPath();
         ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
@@ -569,6 +593,13 @@ class view {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     }
+
+    validateScreenCord(coordinate){
+        if(coordinate.i < 0 || coordinate.j < 0){return false}
+        if(coordinate.i > this.SCREEN_WIDTH || coordinate.j > this.SCREEN_HEIGHT){return false}
+        return true;
+    }
+
 
     tileFloorTexturePixToWorldCord(wq,hq,image,MapY,MapX){
         const x = (MapX + wq/image.width) * CELL_SIZE;
@@ -588,7 +619,7 @@ class view {
 
 
 
-        let i = alpha/FOV * this.SCREEN_WIDTH
+        let i = alpha/FOV * this.SCREEN_WIDTH //fixme, distorted at angles to player
 
 
         const j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, player.angle)/2)
