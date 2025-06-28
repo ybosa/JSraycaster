@@ -531,13 +531,42 @@ class view {
         const block = this.map[MapY][MapX]
         const image = getImage("rubble.png");
 
-        for (let wq = 0; wq<image.width; wq++) {
-            for (let hq = 0; hq<image.height; hq++) {
-                const {i,j} = this.worldCordToScreenCord(this.tileFloorTexturePixToWorldCord(wq,hq,image,MapY,MapX))
-                this.context.drawImage(image,wq,hq,1,1,i,j,50,50);
-            }
-        }
+        // for (let wq = 0; wq<image.width; wq++) {
+        //     for (let hq = 0; hq<image.height; hq++) {
+        //         const {i,j} = this.worldCordToScreenCord(this.tileFloorTexturePixToWorldCord(wq,hq,image,MapY,MapX))
+        //         this.context.drawImage(image,wq,hq,1,1,i,j,50,50);
+        //     }
+        // }
 
+        const ctx = this.context;
+        const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY)
+        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1)
+        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY)
+        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1)
+
+        //triangle
+        let pattern = ctx.createPattern(image, 'repeat');
+        ctx.beginPath();
+        ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        ctx.closePath();
+        ctx.fillStyle = pattern;
+        ctx.fill();
+
+        const image2 = getImage("wall.png");
+        pattern = ctx.createPattern(image2, 'repeat');
+
+        ctx.beginPath();
+        ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        ctx.closePath();
+        ctx.fillStyle = pattern;
+        ctx.fill();
+
+        //reset transform
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     }
 
@@ -547,8 +576,9 @@ class view {
         return {x,y};
     }
 
-    worldCordToScreenCord({x,y}){
-
+    worldCordToScreenCord(MapX,MapY){
+        const x = MapX * CELL_SIZE
+        const y = MapY * CELL_SIZE
         //convert from position (x,y) to position(theta, distance)
         const distance = this.distance(x,y,player.x,player.y)
         const angle = Math.atan2(y-player.y,x-player.x)
