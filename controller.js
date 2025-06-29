@@ -18,6 +18,7 @@ class Controller{
             }
             if (e.key === "ArrowUp" || e.key === "w") {
                 player.speed = 5*CELL_SIZE;
+                player.movePlayer()
             }
             if (e.key === "ArrowDown" || e.key === "s") {
                 player.speed = -2*CELL_SIZE;

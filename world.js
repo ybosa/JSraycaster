@@ -26,34 +26,14 @@ class World{
     }
 
     genMap(x = 25,y=25){
-        let block = new Block()
-        block.imageName = "wall.png"
-        let glass= new Glass()
-
-        let floor = new FloorAndCeiling()
-        floor.ceiling = true
-        floor.floor = true
-
-        let air = new Air()
-        // air.invisible = false //FIXME
+          let air = new Air()
 
         let newMap = [];
         for(let i = 0; i < y; i++){
             let line = [];
             for(let j = 0; j < x; j++){
-                if(i <= 5 || j <= 5){
+
                     line.push(air)
-                }
-                else if(i === 6 && j===6 ){
-                    line.push(block)
-                }
-                else if (i % 4 === 0 && j % 4 ===0) {
-                    (Math.random() > 0.25) ?
-                        line.push((j * i % 2 === 0) ? glass : floor) :
-                        line.push(floor)
-                }
-                else if(Math.random() > 0.25 ) line.push(floor)
-                else line.push(block)
             }
             newMap.push(line)
         }

@@ -28,6 +28,8 @@ class view {
         this.canvas = Canvas;
         this.canvas.setAttribute("width", this.SCREEN_WIDTH);
         this.canvas.setAttribute("height", this.SCREEN_HEIGHT);
+        this.SCREEN_WIDTH = this.SCREEN_WIDTH/2;
+        this.SCREEN_HEIGHT = this.SCREEN_HEIGHT/2;
         document.body.appendChild(this.canvas);
         this.context = this.canvas.getContext("2d");
         this.context.imageSmoothingEnabled = false;
@@ -40,6 +42,7 @@ class view {
         else this.numberOfRays = MAX_RAYS
 
         this.distanceBetweenRaysOnScreen = 2*Math.tan(FOV/2) / this.numberOfRays //equal distance between rays on the screen, used to fix distortion
+        //fixme check the maths here
 
 
     }
@@ -50,6 +53,8 @@ class view {
     }
 
     clearScreen() {
+        this.context.fillStyle = "white";
+        this.context.fillRect(0, 0, this.SCREEN_WIDTH*2, this.SCREEN_HEIGHT*2);
         this.context.fillStyle = COLORS.floor;
         this.context.fillRect(0, this.SCREEN_HEIGHT / 2, this.SCREEN_WIDTH, this.SCREEN_HEIGHT / 2);
         this.context.fillStyle = COLORS.ceiling;
@@ -166,7 +171,7 @@ class view {
                 }
                 //draw floors and ceilings, and lack thereof (as
                 //FIXME debug entry condition to this branch, may just need to be true
-                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling) || block.transparent) {
+                if (false && ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling) || block.transparent) ){
                     //fix overdrawing ray bounds
                     let drawHorizStart = Math.floor(i *pixelWidth)
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
@@ -257,6 +262,9 @@ class view {
 
         });
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
+
+        this.context.strokeStyle = 'black';
+        this.context.strokeRect(0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT)
     }
 
     drawWall(ray, i, useful) {
@@ -477,6 +485,17 @@ class view {
     }
 
     getRays() {
+        //distorted version
+        // let initialAngle = player.angle -FOV/2
+        // let prevAngle = initialAngle
+        // // let angleStep = FOV / this.numberOfRays;
+        // return Array.from({length: this.numberOfRays}, (_, i) => {
+        //     let dAngle = FOV / this.numberOfRays
+        //     let angle = prevAngle + dAngle
+        //     let temp = prevAngle
+        //     prevAngle = angle
+        //     return this.castRay(angle,temp);
+        // });
         let initialAngle = player.angle
         let prevAngle = initialAngle
         // let angleStep = FOV / this.numberOfRays;
@@ -549,6 +568,8 @@ class view {
     drawATexturedFloor(MapY,MapX){
         const block = this.map[MapY][MapX]
         const image = getImage(block.imageName);
+        const distance = this.distance(MapX*CELL_SIZE,MapY*CELL_SIZE,player.x,player.y)
+        // if (distance> 50*CELL_SIZE) return;
 
         // for (let wq = 0; wq<image.width; wq++) {
         //     for (let hq = 0; hq<image.height; hq++) {
@@ -563,41 +584,123 @@ class view {
         const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY)
         const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1)
 
-        let valid = true;
-        valid = valid && this.validateScreenCord(TL_BlockScreenCord);
-        valid = valid && this.validateScreenCord(BL_BlockScreenCord);
-        valid = valid && this.validateScreenCord(TR_BlockScreenCord);
-        valid = valid && this.validateScreenCord(BR_BlockScreenCord);
+        let validblue = true;
+        validblue = validblue && this.validateScreenCord(TL_BlockScreenCord);
+        validblue = validblue && this.validateScreenCord(BL_BlockScreenCord);
+        validblue = validblue && this.validateScreenCord(TR_BlockScreenCord);
+        let validred = true;
+        validred = validred && this.validateScreenCord(BL_BlockScreenCord);
+        validred = validred && this.validateScreenCord(TR_BlockScreenCord);
+        validred = validred && this.validateScreenCord(BR_BlockScreenCord);
 
-        if(!valid) return
+        // if(valid) return
+        // if(!validred  && !validblue) {
+        //     console.log("invalid draw vred: " +validred + " vblue: " +validred  )
+        //     console.log("x: "+MapX + " y: "+MapY)
+        //     console.log("player x: "+player.x / CELL_SIZE + " player y: "+player.y / CELL_SIZE)
+        //     console.log("TL i " + TL_BlockScreenCord.i +" j " + TL_BlockScreenCord.j + " angle " + TL_BlockScreenCord.angle + " distance "+ TL_BlockScreenCord.distance)
+        //     console.log("BL i " + BL_BlockScreenCord.i +" j " + BL_BlockScreenCord.j + " angle " + BL_BlockScreenCord.angle + " distance "+ BL_BlockScreenCord.distance)
+        //     console.log("TR i " + TR_BlockScreenCord.i +" j " + TR_BlockScreenCord.j + " angle " + TR_BlockScreenCord.angle + " distance "+ TR_BlockScreenCord.distance)
+        //     console.log("BR i " + BR_BlockScreenCord.i +" j " + BR_BlockScreenCord.j + " angle " + BR_BlockScreenCord.angle + " distance "+ BR_BlockScreenCord.distance)
+        //     console.log("###########\n")
+        // }
 
         //triangle
         const pattern = ctx.createPattern(image, 'repeat');
-        ctx.beginPath();
-        ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-        ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-        ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-        ctx.closePath();
-        ctx.fillStyle = pattern;
-        ctx.fill();
 
-        ctx.beginPath();
-        ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-        ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-        ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-        ctx.closePath();
-        ctx.fillStyle = pattern;
-        ctx.fill();
+
+        if(this.validateScreenCord(TL_BlockScreenCord) &&
+        this.validateScreenCord(BL_BlockScreenCord) &&
+        this.validateScreenCord(TR_BlockScreenCord)) {
+            ctx.beginPath();
+            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.closePath();
+            ctx.fillStyle = "blue"; //both are good
+            if(!validred) ctx.fillStyle = "darkblue" // red cant be drawn blue can
+            ctx.fill();
+        }
+        if(this.validateScreenCord(TR_BlockScreenCord) &&
+            this.validateScreenCord(BL_BlockScreenCord) &&
+            this.validateScreenCord(BR_BlockScreenCord)) {
+            ctx.beginPath();
+            ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.closePath();
+            ctx.fillStyle = "red"; //both are good
+            if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
+            ctx.fill();
+        }
+        if(!validblue && !validred && this.validateScreenCord(TL_BlockScreenCord)){
+            ctx.beginPath();
+            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+
+            if(this.validateScreenCord(BL_BlockScreenCord)) {
+                ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            }
+            if(this.validateScreenCord(TR_BlockScreenCord)) {
+                ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            }
+            if(this.validateScreenCord(BR_BlockScreenCord)){
+                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+
+            }
+
+
+            ctx.closePath();
+            ctx.fillStyle = "yellow"; //both are good
+            ctx.fill();
+
+            ctx.beginPath();
+            this.drawAPoint(ctx,TL_BlockScreenCord, "white", "lime")  //shared in common btw red and blue
+
+            if(this.validateScreenCord(BL_BlockScreenCord)) {
+                this.drawAPoint(ctx,BL_BlockScreenCord, "black", "lime")
+            }
+            if(this.validateScreenCord(TR_BlockScreenCord)) {
+                this.drawAPoint(ctx,TR_BlockScreenCord, "white", "orange")
+            }
+            if(this.validateScreenCord(BR_BlockScreenCord)){
+                this.drawAPoint(ctx,BR_BlockScreenCord, "black", "orange") //shared in common btw red and blue
+
+            }
+            ctx.fill();
+
+
+        }
 
         //reset transform
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     }
 
+    drawAPoint(ctx,coord, fill, line){
+            ctx.beginPath();
+            ctx.arc(coord.i,coord.j,30,0,2*Math.PI)
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = line;
+            ctx.stroke();
+
+    }
+
     validateScreenCord(coordinate){
-        if(coordinate.i < 0 || coordinate.j < 0){return false}
-        if(coordinate.i > this.SCREEN_WIDTH || coordinate.j > this.SCREEN_HEIGHT){return false}
+        // if(coordinate.i < 0){return false} not needed
+        if(coordinate.j < 0){
+            return false
+        }
+
+        // if(coordinate.i > this.SCREEN_WIDTH || coordinate.j > this.SCREEN_HEIGHT){return false} not needed
         return true;
+    }
+
+    floorScreenCord(coordinate){
+        coordinate.i = Math.floor(coordinate.i);
+        coordinate.j = Math.floor(coordinate.j);
+        return coordinate
     }
 
 
@@ -617,13 +720,32 @@ class view {
         //convert from position(theta, distance) to screen postion(i,j)
         let alpha =  (angle - player.angle + FOV/2)
 
+        /* how angle correction works in ray cast
+        // let angleStep = FOV / this.numberOfRays;
+        let dAngle = Math.atan((i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  )
+        let angle = player.angle + dAngle
+        */
+
+        /*reverse correction to find i    (i is proportion of screen not pixels)
+        (i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  ) = tan (dangle)
+        (i - this.numberOfRays/2 ) = tan (dangle) / this.distanceBetweenRaysOnScreen
+        i = tan (dangle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
+
+        angle = player.angle + dAngle
+        dAngle = angle - player.angle
+
+        i = tan (angle - player.angle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
+
+        */
 
 
-        let i = alpha/FOV * this.SCREEN_WIDTH //fixme, distorted at angles to player
+        // let i = alpha/FOV * this.SCREEN_WIDTH / number of rays //fixme, distorted at angles to player, the error is that the delta between each ray is not constant!
 
+        let i = (Math.tan (angle - player.angle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2) * (this.SCREEN_WIDTH / this.numberOfRays)
 
-        const j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, player.angle)/2)
-        return {i,j}
+        let j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, player.angle)/2)
+
+        return this.floorScreenCord({i,j,angle,distance})
     }
 }
 

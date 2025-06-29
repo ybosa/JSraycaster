@@ -1,5 +1,5 @@
 let world = new World()
-let player = new Player(CELL_SIZE * 2.5,CELL_SIZE * 12.5,toRadians(90),0,world)
+let player = new Player(CELL_SIZE * 5.5,CELL_SIZE * 5.5,toRadians(90),0,world)
 generateDemoMap(world)
 let viewer = new view(player)
 let controller = new Controller(player,viewer.canvas)
