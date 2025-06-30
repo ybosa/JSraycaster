@@ -14,6 +14,8 @@ function generateDemoMap(world){
     const air = new Air()
     let stoneWall = new Block()
     stoneWall.imageName = "wall.png"
+    // stoneWall.ceiling = true //fixme causes glitch block on side not rendering when going through a narrow gap
+    // stoneWall.floor = true //fixme causes glitch block on side not rendering when going through a narrow gap
     let rubble = new Block()
     rubble.imageName = "rubble.png"
 
