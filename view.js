@@ -171,7 +171,7 @@ class view {
                 }
                 //draw floors and ceilings, and lack thereof (as
                 //FIXME debug entry condition to this branch, may just need to be true
-                if (false && ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling) || block.transparent) ){
+                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling) || block.transparent) {
                     //fix overdrawing ray bounds
                     let drawHorizStart = Math.floor(i *pixelWidth)
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)

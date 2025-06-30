@@ -23,8 +23,8 @@ function generateDemoMap(world){
     // stoneFloorRoofB.ceiling = false
      //main hall
     fillAltArea(map,stoneFloorRoofW,stoneFloorRoofB,0,24,0,24)
-    // fillAltArea(map,stoneFloorRoofW,stoneFloorRoofB,0,24,0,24)
-    // fillAltArea2(map,stone,0,24,0,24)
+    fillAltArea(map,stoneFloorRoofW,stoneFloorRoofB,0,24,0,24)
+    fillAltArea2(map,stone,0,24,0,24)
 }
 
 function drawRow(map,block,row,colStart,colStop){
