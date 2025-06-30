@@ -22,7 +22,7 @@ export default class Sprite extends Entity{
             let cellRadius2 = (cellRadius-1) * (cellRadius-1) //radius^2 of circle described by entity
             for (let y = -cellRadius; y <= cellRadius; y++){
                 for (let x = -cellRadius; x <= cellRadius; x++){
-                    if(world.outOfMapBounds(mapX+x,mapY+y) || (x) * (x) + (y)*(y) >= cellRadius2 ) {}
+                    if(world.outOfMapBounds(mapX+x,mapY+y) || (x) * (x) + (y)*(y) >= cellRadius2 ) {} //fixme potential bug? unused if
                     world.putEntityCoords(this,mapX+x,mapY+y)
 
                 }
