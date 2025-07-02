@@ -124,6 +124,8 @@ class view {
         const drawnFloors = []
         const drawnCeilings = []
 
+
+        //draw textured floors
         rays.forEach((ray) => {
             let previousBlock = ray.blocks[ray.blocks.length - 1]
             for (let j = ray.blocks.length - 1; j >= 0; j--) {

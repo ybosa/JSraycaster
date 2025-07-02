@@ -1,0 +1,31 @@
+1) refactor blocks class to use getters
+    a) supports images from multiple directions with getimg( angle)
+    b) supports different ceiling and floor images
+
+    c) consider either generating on the fly an average floor /ceiling colour or pre loading it
+
+2) fix floor lighting
+
+3) fix line in the middle and outside of floors due to texture coords being non integer fix by flooring or by adding +1
+
+4) make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance.
+
+5) set max depth for transparent textures, consider a non transparent variant after second or (N) layer?
+
+6) fix skybox line in the north east direction
+
+
+100) replace solid colour floor draw with an average over a given distance to anti alias long distance draws
+    potentialy draw for a max of x pixels before switching to next draw colour?
+
+110) use affine textures for walls
+    potentialy only for long distance? obscured by a another object etc
+
+200) redo entire algo sort everything by distance and draw one after the other so sprites dont draw over ceilings
+
+300) add portals!
+
+1'000'000) make it 3d!
+
+
+
