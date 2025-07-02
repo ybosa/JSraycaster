@@ -16,6 +16,8 @@
 
 10) consolidate config
 
+20) better image loading, not lazy method, game shouldnt crash if img load fails!
+
 
 100) replace solid colour floor draw with an average over a given distance to anti alias long distance draws
     potentialy draw for a max of x pixels before switching to next draw colour?
