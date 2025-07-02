@@ -702,40 +702,31 @@ class view {
             if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
             ctx.fill();
         }
-        if(!validblue && !validred && this.validateScreenCord(TL_BlockScreenCord,floor)){
-            ctx.beginPath();
-            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-
-            if(this.validateScreenCord(BL_BlockScreenCord,floor)) {
-                ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            }
-            if(this.validateScreenCord(TR_BlockScreenCord,floor)) {
-                ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            }
-            if(this.validateScreenCord(BR_BlockScreenCord,floor)){
+        if( !validblue && !validred && this.validateScreenCord(TL_BlockScreenCord,floor) && this.validateScreenCord(BR_BlockScreenCord,floor) ){
+            if(this.validateScreenCord(TR_BlockScreenCord,floor)){
+               ctx.beginPath();
+                ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
                 ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
 
-            }
 
-
-            ctx.closePath();
-            ctx.fillStyle = "yellow"; //both are good
-            ctx.fill();
-
-            ctx.beginPath();
-            this.drawAPoint(ctx,TL_BlockScreenCord, "white", "lime")  //shared in common btw red and blue
-
-            if(this.validateScreenCord(BL_BlockScreenCord,floor)) {
-                this.drawAPoint(ctx,BL_BlockScreenCord, "black", "lime")
-            }
-            if(this.validateScreenCord(TR_BlockScreenCord,floor)) {
-                this.drawAPoint(ctx,TR_BlockScreenCord, "white", "orange")
-            }
-            if(this.validateScreenCord(BR_BlockScreenCord,floor)){
-                this.drawAPoint(ctx,BR_BlockScreenCord, "black", "orange") //shared in common btw red and blue
+                ctx.closePath();
+                ctx.fillStyle = "yellow";
+                ctx.fill();
 
             }
-            ctx.fill();
+            else if(this.validateScreenCord(BL_BlockScreenCord,floor)){
+                ctx.beginPath();
+                ctx.moveTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+
+
+                ctx.closePath();
+                ctx.fillStyle = "orange";
+                ctx.fill();
+
+            }
 
 
         }
@@ -753,8 +744,6 @@ class view {
      * @param floor (true) if drawing a floor, false if drawing a ceiling
      */
     drawATexturedFloorOrCeiling(MapY,MapX,floor){
-
-
         const ctx = this.context;
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
         const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
@@ -774,74 +763,126 @@ class view {
         //triangle
         const block = this.map[MapY][MapX]
         const image = getImage(block.imageName);
-        const pattern = ctx.createPattern(image, 'repeat');
-
 
         if(this.validateScreenCord(TL_BlockScreenCord ,floor ) &&
             this.validateScreenCord(BL_BlockScreenCord,floor) &&
             this.validateScreenCord(TR_BlockScreenCord,floor)) {
-            ctx.beginPath();
-            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.closePath();
-            ctx.fillStyle = "blue"; //both are good
-            if(!validred) ctx.fillStyle = "darkblue" // red cant be drawn blue can
-            ctx.fill();
+
+            const s0 = {x:0,y:0}
+            const s1 = {x:image.width,y:0}
+            const s2 =  {x:0,y:image.height}
+            const srcTri = [s0, s1, s2];
+            const dstTri = [{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}, {x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}];
+
+            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+
+
         }
         if(this.validateScreenCord(TR_BlockScreenCord ,floor) &&
             this.validateScreenCord(BL_BlockScreenCord,floor) &&
             this.validateScreenCord(BR_BlockScreenCord,floor)) {
-            ctx.beginPath();
-            ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.closePath();
-            ctx.fillStyle = "red"; //both are good
-            if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
-            ctx.fill();
+
+            const s0 = {x:image.width,y:image.height}
+            const s1 = {x:0,y:image.height}
+            const s2 =  {x:image.width,y:0}
+            const srcTri = [s0, s1, s2];
+            const dstTri = [{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}];
+
+            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
         }
-        if(!validblue && !validred && this.validateScreenCord(TL_BlockScreenCord,floor)){
-            ctx.beginPath();
-            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
 
-            if(this.validateScreenCord(BL_BlockScreenCord,floor)) {
-                ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            }
-            if(this.validateScreenCord(TR_BlockScreenCord,floor)) {
-                ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            }
-            if(this.validateScreenCord(BR_BlockScreenCord,floor)){
-                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+        if( !validblue && !validred && this.validateScreenCord(TL_BlockScreenCord,floor) && this.validateScreenCord(BR_BlockScreenCord,floor) ){
+            if(this.validateScreenCord(TR_BlockScreenCord,floor)){
+                const s0 = {x:image.width,y:0}
+                const s1 = {x:0,y:0}
+                const s2 = {x:image.width,y:image.height}
+                const srcTri = [s0, s1, s2];
+                const dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
+
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
 
             }
+            else if(this.validateScreenCord(BL_BlockScreenCord,floor)){
+                const s0 = {x:0,y:image.height}
+                const s1 = {x:image.width,y:image.height}
+                const s2 = {x:0,y:0}
+                const srcTri = [s0, s1, s2];
+                const dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
 
-
-            ctx.closePath();
-            ctx.fillStyle = "yellow"; //both are good
-            ctx.fill();
-
-            ctx.beginPath();
-            this.drawAPoint(ctx,TL_BlockScreenCord, "white", "lime")  //shared in common btw red and blue
-
-            if(this.validateScreenCord(BL_BlockScreenCord,floor)) {
-                this.drawAPoint(ctx,BL_BlockScreenCord, "black", "lime")
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
             }
-            if(this.validateScreenCord(TR_BlockScreenCord,floor)) {
-                this.drawAPoint(ctx,TR_BlockScreenCord, "white", "orange")
-            }
-            if(this.validateScreenCord(BR_BlockScreenCord,floor)){
-                this.drawAPoint(ctx,BR_BlockScreenCord, "black", "orange") //shared in common btw red and blue
-
-            }
-            ctx.fill();
-
-
         }
 
         //reset transform
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
+    }
+
+    drawAffineTriangleGeneral(ctx, img, srcTri, dstTri) {
+        const [s0, s1, s2] = srcTri;
+        const [d0, d1, d2] = dstTri;
+
+        // Compute source vectors (from s0)
+        const sx1 = s1.x - s0.x;
+        const sy1 = s1.y - s0.y;
+        const sx2 = s2.x - s0.x;
+        const sy2 = s2.y - s0.y;
+
+        // Compute destination vectors (from d0)
+        const dx1 = d1.x - d0.x;
+        const dy1 = d1.y - d0.y;
+        const dx2 = d2.x - d0.x;
+        const dy2 = d2.y - d0.y;
+
+        ctx.save();
+
+        // Move to destination triangle origin
+        ctx.translate(d0.x, d0.y);
+
+        // Clip to destination triangle
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(dx1, dy1);
+        ctx.lineTo(dx2, dy2);
+        ctx.closePath();
+        ctx.clip();
+
+        // Build affine transform from source to destination
+        // Solve matrix A such that: A * (sx1, sy1) = (dx1, dy1)
+        //                           A * (sx2, sy2) = (dx2, dy2)
+        //
+        // So:
+        //   | a c |   *   | sx1 sx2 |   =   | dx1 dx2 |
+        //   | b d |       | sy1 sy2 |       | dy1 dy2 |
+
+        const det = sx1 * sy2 - sx2 * sy1;
+        if (det === 0) {
+            // console.warn("Degenerate triangle");
+            ctx.restore();
+            return;
+        }
+
+        const idet = 1 / det;
+
+        // Inverse matrix of source
+        const isx1 =  sy2 * idet;
+        const isy1 = -sy1 * idet;
+        const isx2 = -sx2 * idet;
+        const isy2 =  sx1 * idet;
+
+        // Final transform matrix = dest * inverse(src)
+        const a = dx1 * isx1 + dx2 * isx2;
+        const b = dy1 * isx1 + dy2 * isx2;
+        const c = dx1 * isy1 + dx2 * isy2;
+        const d = dy1 * isy1 + dy2 * isy2;
+        const e = -a * s0.x - c * s0.y;
+        const f = -b * s0.x - d * s0.y;
+
+        ctx.transform(a, b, c, d, e, f);
+
+        ctx.drawImage(img, 0, 0);
+
+        ctx.restore();
     }
 
     /**

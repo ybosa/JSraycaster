@@ -22,14 +22,17 @@ function generateDemoMap(world){
     let rubbleFloor = new FloorAndCeiling()
     rubbleFloor.floorColour = [166,152,143,1]
     rubbleFloor.ceilingColour = [125,123,112,1]
+    rubbleFloor.imageName = "rubble.png"
 
     let stoneFloorRoofW = new FloorAndCeiling()
     stoneFloorRoofW.ceilingColour =[200,200,200,1]
     stoneFloorRoofW.floorColour = [200,200,200,1]
+    stoneFloorRoofW.imageName = "white.png"
 
     let stoneFloorRoofB = new FloorAndCeiling()
     stoneFloorRoofB.ceilingColour = [200,200,200,1]
     stoneFloorRoofB.floorColour = [50,50,50,1]
+    stoneFloorRoofB.imageName = "black.png"
 
 
     let bars = new Glass()
@@ -45,6 +48,7 @@ function generateDemoMap(world){
         const delta = 10
         rubbleFloor.floorColour = [166 - delta/2 + Math.random()*delta,152- delta/2 + Math.random()*delta,143- delta/2 + Math.random()*delta,1]
         rubbleFloor.ceilingColour = [125- delta/2 + Math.random()*delta,123- delta/2 + Math.random()*delta,112- delta/2 + Math.random()*delta,1]
+        rubbleFloor.imageName = "rubble.png"
         return rubbleFloor
     },7,19,3,9)
     drawPerim(map,rubble,7,19,3,9)
