@@ -651,19 +651,20 @@ class view {
     debugDrawATexturedFloorOrCeiling(MapY,MapX,floor){
 
         const ctx = this.context;
+        ctx.save()
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
         const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
         const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY,floor)
         const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1,floor)
 
-        let validblue = true;
-        validblue = validblue && this.validateScreenCord(TL_BlockScreenCord,floor);
-        validblue = validblue && this.validateScreenCord(BL_BlockScreenCord,floor);
-        validblue = validblue && this.validateScreenCord(TR_BlockScreenCord,floor);
-        let validred = true;
-        validred = validred && this.validateScreenCord(BL_BlockScreenCord,floor);
-        validred = validred && this.validateScreenCord(TR_BlockScreenCord,floor);
-        validred = validred && this.validateScreenCord(BR_BlockScreenCord,floor);
+        const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
+        const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
+        const TR_BlockScreenCord_Is_Valid = this.validateScreenCord(TR_BlockScreenCord,floor);
+        const BR_BlockScreenCord_Is_Valid = this.validateScreenCord(BR_BlockScreenCord,floor);
+
+
+        const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
+        const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
 
         // if(valid) return
         // if(!validred  && !validblue) {
@@ -680,9 +681,9 @@ class view {
         //triangle
 
 
-        if(this.validateScreenCord(TL_BlockScreenCord ,floor ) &&
-            this.validateScreenCord(BL_BlockScreenCord,floor) &&
-            this.validateScreenCord(TR_BlockScreenCord,floor)) {
+        if(TL_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            TR_BlockScreenCord_Is_Valid) {
             ctx.beginPath();
             ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
             ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
@@ -692,9 +693,9 @@ class view {
             if(!validred) ctx.fillStyle = "darkblue" // red cant be drawn blue can
             ctx.fill();
         }
-        if(this.validateScreenCord(TR_BlockScreenCord ,floor) &&
-            this.validateScreenCord(BL_BlockScreenCord,floor) &&
-            this.validateScreenCord(BR_BlockScreenCord,floor)) {
+        if(TR_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            BR_BlockScreenCord_Is_Valid) {
             ctx.beginPath();
             ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
             ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
@@ -704,8 +705,8 @@ class view {
             if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
             ctx.fill();
         }
-        if( !validblue && !validred && this.validateScreenCord(TL_BlockScreenCord,floor) && this.validateScreenCord(BR_BlockScreenCord,floor) ){
-            if(this.validateScreenCord(TR_BlockScreenCord,floor)){
+        if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
+            if(TR_BlockScreenCord_Is_Valid){
                ctx.beginPath();
                 ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
                 ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
@@ -717,7 +718,7 @@ class view {
                 ctx.fill();
 
             }
-            else if(this.validateScreenCord(BL_BlockScreenCord,floor)){
+            else if(BL_BlockScreenCord_Is_Valid){
                 ctx.beginPath();
                 ctx.moveTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
                 ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
@@ -733,9 +734,7 @@ class view {
 
         }
 
-        //reset transform
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-
+        ctx.restore();
     }
 
     /**
@@ -747,28 +746,29 @@ class view {
      */
     drawATexturedFloorOrCeiling(MapY,MapX,floor){
         const ctx = this.context;
+        ctx.save();
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
         const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
         const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY,floor)
         const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1,floor)
 
-        let validblue = true;
-        validblue = validblue && this.validateScreenCord(TL_BlockScreenCord,floor);
-        validblue = validblue && this.validateScreenCord(BL_BlockScreenCord,floor);
-        validblue = validblue && this.validateScreenCord(TR_BlockScreenCord,floor);
-        let validred = true;
-        validred = validred && this.validateScreenCord(BL_BlockScreenCord,floor);
-        validred = validred && this.validateScreenCord(TR_BlockScreenCord,floor);
-        validred = validred && this.validateScreenCord(BR_BlockScreenCord,floor);
+        const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
+        const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
+        const TR_BlockScreenCord_Is_Valid = this.validateScreenCord(TR_BlockScreenCord,floor);
+        const BR_BlockScreenCord_Is_Valid = this.validateScreenCord(BR_BlockScreenCord,floor);
+
+
+        const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
+        const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
 
 
         //triangle
         const block = this.map[MapY][MapX]
         const image = getImage(block.imageName);
 
-        if(this.validateScreenCord(TL_BlockScreenCord ,floor ) &&
-            this.validateScreenCord(BL_BlockScreenCord,floor) &&
-            this.validateScreenCord(TR_BlockScreenCord,floor)) {
+        if(TL_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            TR_BlockScreenCord_Is_Valid) {
 
             const s0 = {x:0,y:0}
             const s1 = {x:image.width,y:0}
@@ -780,9 +780,9 @@ class view {
 
 
         }
-        if(this.validateScreenCord(TR_BlockScreenCord ,floor) &&
-            this.validateScreenCord(BL_BlockScreenCord,floor) &&
-            this.validateScreenCord(BR_BlockScreenCord,floor)) {
+        if(TR_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            BR_BlockScreenCord_Is_Valid) {
 
             const s0 = {x:image.width,y:image.height}
             const s1 = {x:0,y:image.height}
@@ -793,8 +793,8 @@ class view {
             this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
         }
 
-        if( !validblue && !validred && this.validateScreenCord(TL_BlockScreenCord,floor) && this.validateScreenCord(BR_BlockScreenCord,floor) ){
-            if(this.validateScreenCord(TR_BlockScreenCord,floor)){
+        if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
+            if(TR_BlockScreenCord_Is_Valid){
                 const s0 = {x:image.width,y:0}
                 const s1 = {x:0,y:0}
                 const s2 = {x:image.width,y:image.height}
@@ -804,7 +804,7 @@ class view {
                 this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
 
             }
-            else if(this.validateScreenCord(BL_BlockScreenCord,floor)){
+            else if(BL_BlockScreenCord_Is_Valid){
                 const s0 = {x:0,y:image.height}
                 const s1 = {x:image.width,y:image.height}
                 const s2 = {x:0,y:0}
@@ -815,9 +815,7 @@ class view {
             }
         }
 
-        //reset transform
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-
+        ctx.restore();
     }
 
     drawAffineTriangleGeneral(ctx, img, srcTri, dstTri) {

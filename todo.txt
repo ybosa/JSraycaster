@@ -14,6 +14,8 @@
 
 6) fix skybox line in the north east direction
 
+7) fix floors rendering behind abyss blocks, k
+
 10) consolidate config
 
 20) better image loading, not lazy method, game shouldnt crash if img load fails!
