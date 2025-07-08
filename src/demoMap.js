@@ -1,6 +1,6 @@
 "use strict";
 import Sprite from "./sprite.js";
-import {ABYSS, Air, Block, FloorAndCeiling, Glass} from "./block.js";
+import {ABYSS, Air, oldBlock, FloorAndCeiling, Glass} from "./block.js";
 import {CELL_SIZE} from "./config.js";
 import {Light} from "./light.js";
 
@@ -12,11 +12,11 @@ function generateDemoMap(world){
 
 
     const air = new Air()
-    let stoneWall = new Block()
+    let stoneWall = new oldBlock()
     stoneWall.imageName = "wall.png"
     // stoneWall.ceiling = true //fixme causes glitch block on side not rendering when going through a narrow gap
     // stoneWall.floor = true //fixme causes glitch block on side not rendering when going through a narrow gap
-    let rubble = new Block()
+    let rubble = new oldBlock()
     rubble.imageName = "rubble.png"
 
     let rubbleFloor = new FloorAndCeiling()
@@ -80,13 +80,13 @@ function generateDemoMap(world){
     fillArea(map,gravelFloor,7,19,25,32)
 
 
-    let pillar = new Block()
+    let pillar = new oldBlock()
     pillar.imageName = 'pillar.png'
     drawPerim(map,ABYSS,4,22,20,35)
     map[21][5] = stoneWall; map[21][21] = stoneWall;
     fillAltArea(map,null,pillar,8,18,22,22)
 
-    let leaves = new Block()
+    let leaves = new oldBlock()
     leaves.wall = true
     leaves.transparent = true
     leaves.imageName = 'leaves.png'
@@ -115,7 +115,7 @@ function generateDemoMap(world){
     fillAltArea(map,pillar,null,8,18,19,19)
 
     //disco room
-    let white = new Block()
+    let white = new oldBlock()
     white.imageName = "white.png"
     let whiteFloor = new FloorAndCeiling()
     whiteFloor.ceilingColour = [255,255,255,1]

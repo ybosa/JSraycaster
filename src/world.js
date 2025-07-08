@@ -1,5 +1,5 @@
 "use strict";
-import {Block,FloorAndCeiling,Glass,Air, ABYSS} from "./block.js";
+import {FloorAndCeiling,Glass,Air, ABYSS,oldBlock} from "./block.js";
 import {CELL_SIZE} from "./config.js";
 import LIGHT, {Light} from "./light.js";
 
@@ -31,7 +31,7 @@ class World{
     }
 
     genMap(x = 25,y=25){
-        let block = new Block()
+        let block = new oldBlock()
         block.imageName = "wall.png"
         let glass= new Glass()
 

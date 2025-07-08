@@ -18,7 +18,13 @@
 
 10) consolidate config
 
-20) better image loading, not lazy method, game shouldnt crash if img load fails!
+11) fix GitHub preview not working, or replace with something else to send a link to people
+
+20) better image loading, not lazy method,
+21) game shouldn't crash if an img load fails!
+
+
+30) custom ray collision math => allows for complex wall shapes
 
 
 100) replace solid colour floor draw with an average over a given distance to anti alias long distance draws
