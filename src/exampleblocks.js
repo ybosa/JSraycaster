@@ -53,7 +53,7 @@ class Glass extends oldBlock{
     }
 }
 
-const ABYSS = new oldBlock() //placeholder block for out-of-bounds block logics
+const ABYSS = new oldBlock({drawBackgroundImgInstead:true}) //placeholder block for out-of-bounds block logics
 
 class Air extends oldBlock{
     constructor(blockdata = {}) {

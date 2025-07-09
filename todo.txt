@@ -1,8 +1,8 @@
-1) refactor blocks class to use getters
-    a) supports images from multiple directions with getimg( angle)
-    b) supports different ceiling and floor images
+#1) refactor blocks class to use getters
+#    a) supports images from multiple directions with getimg( angle)
+#    b) supports different ceiling and floor images
 
-    c) consider either generating on the fly an average floor /ceiling colour or pre loading it
+#    c) consider either generating on the fly an average floor /ceiling colour or pre loading it - flor colour must be configured manually for now
 
 1.5) refactor abyss block out, it should be replaced with a generic block stop rendering properties.
 1.6) fix static block handling, would reduce memory usage for many equal blocks

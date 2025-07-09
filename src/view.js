@@ -8,7 +8,6 @@ import {
     MAX_RAYS,
     MINIMAP
 } from "./config.js";
-import {ABYSS} from "./exampleblocks.js";
 import Block from "./block.js";
 import Light from "./light.js";
 
@@ -140,7 +139,7 @@ class view {
                 const distance = this.distance(useful.mapX*CELL_SIZE,useful.mapY*CELL_SIZE,this.player.x,this.player.y)
                 if (distance > FLOOR_TEXTURED_DRAW_MAX_DIST*CELL_SIZE && FLOOR_TEXTURED_DRAW_MAX_DIST >= 0) continue;
 
-                if(!(drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX]) && !(block.isInvisible() || block === ABYSS) ) {
+                if(!(drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch, may just need to be true
                     if (block.isFloor()){
@@ -155,7 +154,7 @@ class view {
                     }
                 }
 
-                if(!(drawnCeilings[useful.mapY] && drawnCeilings[useful.mapY][useful.mapX]) && !(block.isInvisible() || block === ABYSS) ) {
+                if(!(drawnCeilings[useful.mapY] && drawnCeilings[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch, may just need to be true
                     if (block.isCeiling()){
@@ -197,11 +196,12 @@ class view {
                 const useful = ray.blocks[j]
                 const block = useful.block
                 //ignore out of bounds or invisible blocks
-                if (/*block.isInvisible() ||*/ block === ABYSS) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
                 if(block.sprite) {
                     this.drawSprite(ray, i, useful)
                     continue
                 }
+                if (block.isInvisible() || block.isDrawBackgroundImgInstead()) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
+
                 //draw floors and ceilings, and lack thereof (as
                 //FIXME debug entry condition to this branch, may just need to be true
                 if ((block.isFloor() || block.isCeiling() ) || (!block.isWall() && !block.isFloor() && !block.isCeiling()) || block.isTransparent()) {
@@ -504,8 +504,7 @@ class view {
             }
             //check if out of bounds
             if (this.world.outOfMapBounds(mapX, mapY)) {
-                let block = ABYSS
-                blocks.push({block, distance})
+                //fixme need to add a block here that tells it to redraw the background for the wall so you cant see a floor or ceiling behind it!
                 return {
                     angle,
                     blocks: blocks

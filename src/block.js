@@ -5,6 +5,8 @@ class Block {
     // static staticInstance = null;
 
     #invisible = false; //invisible blocks are not drawn FIXME not handled correctly
+    #drawBackgroundImgInstead = false // terminates draw and draws the background image where the wall would be
+
     #transparent = false;//if block is transparent, ray will draw it and blocks behind
 
     #passable = false;// block allows entities / players to move through it
@@ -28,6 +30,7 @@ class Block {
     isWall(){ return this.#wall;}
     isFloor() { return this.#floor}
     isCeiling(){ return this.#ceiling}
+    isDrawBackgroundImgInstead(){return this.#drawBackgroundImgInstead}
 
     //get properties
     static getStaticInstance(){return this.staticInstance}
@@ -104,6 +107,7 @@ class Block {
             this.#ceiling = (blockData.hasOwnProperty("ceiling")) ? blockData.ceiling : this.#ceiling;
             this.#ceilingImageName = (blockData.hasOwnProperty("ceilingImageName")) ? blockData.ceilingImageName : this.#ceilingImageName;
             this.#ceilingColour = (blockData.hasOwnProperty("ceilingColour")) ? blockData.ceilingColour : this.#ceilingColour;
+            this.#drawBackgroundImgInstead = (blockData.hasOwnProperty("drawBackgroundImgInstead")) ? blockData.drawBackgroundImgInstead : this.#drawBackgroundImgInstead;
         }
     }
 }
