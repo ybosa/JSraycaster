@@ -132,7 +132,7 @@ class view {
                 const useful = ray.blocks[j]
                 const block = useful.block
                 if(!(block instanceof Block)){
-                    console.warn("useful.block needs to be renamed! not all of these are blocks!")
+                    // console.warn("useful.block needs to be renamed! not all of these are blocks!")
                     continue
                 }
 

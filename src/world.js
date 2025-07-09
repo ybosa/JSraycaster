@@ -35,7 +35,7 @@ class World{
 
         let glass= new Glass()
 
-        let floor = new FloorAndCeiling()
+        let floor = new FloorAndCeiling({ceiling:false})
 
         let air = new Air()
         // air.invisible = false //FIXME

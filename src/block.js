@@ -1,8 +1,7 @@
 "use strict";
 //abstract block class is not intended to be used directly in game
 class Block {
-    // static staticBlock = true; //static blocks are always identical, so only 1 of its kind need to be crated
-    // static staticInstance = null;
+    static #staticBlockClassesMap = new Map()
 
     #invisible = false; //invisible blocks are not drawn FIXME not handled correctly
     #drawBackgroundImgInstead = false // terminates draw and draws the background image where the wall would be
@@ -23,7 +22,7 @@ class Block {
 
 
     //boolean getters
-    static isStatic(){return this.staticBlock}
+    static isStatic(BlockClass){return this.#staticBlockClassesMap.has(BlockClass)}
     isInvisible() {return this.#invisible}
     isTransparent(){ return this.#transparent;}
     isPassable(){ return this.#passable}
@@ -33,7 +32,7 @@ class Block {
     isDrawBackgroundImgInstead(){return this.#drawBackgroundImgInstead}
 
     //get properties
-    static getStaticInstance(){return this.staticInstance}
+    static getStaticInstance(BlockClass){return this.#staticBlockClassesMap.get(BlockClass)}
     getFloorColour(){return this.#floorColour}
     getCeilingColour(){return this.#ceilingColour}
 
@@ -59,10 +58,10 @@ class Block {
     //TODO custom ray collision math => allows for complex wall shapes
 
     constructor(blockData = {}) {
-        //if static block is not defined in blockData, default to true
-        // if(blockData.staticBlock == false && blockData.staticBlock !== false){
-        //     blockData.staticBlock = true
-        // }
+        // if static block is not defined in blockData, default to true
+        if(!blockData.hasOwnProperty("staticBlock")){
+            blockData.staticBlock = true
+        }
         const BlockClass = new.target;
         if(!BlockClass){
             throw new Error("Cannot instantiate an unknown block class!")
@@ -71,28 +70,25 @@ class Block {
             throw new Error("Cannot instantiate an non block class as a block!")
         }
 
-        /*//correct for static non static blocks
-        if(blockData.staticBlock !== BlockClass.staticBlock) {
-            let msg = "Cannot create a static block from non static class!";
-            if(blockData.staticBlock) {msg = "Cannot create a non static block from a static class!"}
 
-            msg = "Invalid construction of "+BlockClass + " "+ msg + "\n Creating block as a "+((BlockClass.staticBlock)? "static" : "non static" )+ " block!"
-
+        //correct for non static declaration of static blocks
+        if(!blockData.staticBlock && Block.isStatic(BlockClass)) {
+            let msg = "Cannot create a non static block from a static class!"
+            msg = "Invalid construction of "+BlockClass + " "+ msg + "\n Creating block as a static block!"
             console.warn(msg)
-            blockData.staticBlock=BlockClass.staticBlock;
-
+            blockData.staticBlock=true;
         }
-        //deal with the first instantiation of a static block
-        if(BlockClass.staticBlock && !BlockClass.staticInstance) {
-            BlockClass.staticInstance = true;
+        // deal with the first instantiation of a static block
+        if(blockData.staticBlock && !Block.isStatic(BlockClass)) {
+            Block.#staticBlockClassesMap.set(BlockClass,null)
             const blockStaticInstance = new BlockClass(blockData);
-            BlockClass.staticInstance = blockStaticInstance;
+            Block.#staticBlockClassesMap.set(BlockClass,blockStaticInstance)
             return blockStaticInstance;
-        }*/
+        }
 
         //construct the block object using blockData object
-        /*if(BlockClass.staticBlock && BlockClass.staticInstance) return BlockClass.staticInstance;
-        else */if(blockData) {
+        if(Block.isStatic(BlockClass) && Block.getStaticInstance(BlockClass)) return (Block.getStaticInstance(BlockClass));
+        else {
             this.#invisible = (blockData.hasOwnProperty("invisible")) ? blockData.invisible : this.#invisible;
             this.#transparent = (blockData.hasOwnProperty("transparent")) ? blockData.transparent : this.#transparent;
             this.#passable = (blockData.hasOwnProperty("passable")) ? blockData.passable : this.#passable;

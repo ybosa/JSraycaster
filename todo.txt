@@ -4,8 +4,11 @@
 
 #    c) consider either generating on the fly an average floor /ceiling colour or pre loading it - flor colour must be configured manually for now
 
-1.5) refactor abyss block out, it should be replaced with a generic block stop rendering properties.
-1.6) fix static block handling, would reduce memory usage for many equal blocks
+#1.5) refactor abyss block out, it should be replaced with a generic block stop rendering properties.
+#1.6) fix static block handling, would reduce memory usage for many equal blocks
+
+1.7) fix demo map, need to redo all new blocks to fix errors
+
 
 2) fix floor lighting
 
@@ -17,7 +20,8 @@
 
 6) fix skybox line in the north east direction
 
-7) fix floors rendering behind abyss blocks,
+7) fix floors rendering behind abyss blocks, will need to redraw the background img, potentialy do with the floor ceiling too? (sprites)
+7.5) reuse the background draw code to allow for textures that are based on screen position not world for weird effects! add it as a property of the blocks class.
 
 10) consolidate config
 

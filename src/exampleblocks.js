@@ -23,6 +23,7 @@ class oldBlock extends Block{
 class FloorAndCeiling extends oldBlock{
     constructor(blockdata = {}) {
         const defaultBlockData = {
+            static: false,
             floor : true,
             ceiling : true,
             wall : false,
@@ -53,7 +54,6 @@ class Glass extends oldBlock{
     }
 }
 
-const ABYSS = new oldBlock({drawBackgroundImgInstead:true}) //placeholder block for out-of-bounds block logics
 
 class Air extends oldBlock{
     constructor(blockdata = {}) {
@@ -71,5 +71,13 @@ class Air extends oldBlock{
 
 
 }
+
+class Abyss extends Block{
+    constructor() {
+        super({drawBackgroundImgInstead:true});
+    }
+}
+
+const ABYSS = new Abyss()
 
 export {FloorAndCeiling,Glass,Air, ABYSS,oldBlock};
