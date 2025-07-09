@@ -4,6 +4,9 @@
 
     c) consider either generating on the fly an average floor /ceiling colour or pre loading it
 
+1.5) refactor abyss block out, it should be replaced with a generic block stop rendering properties.
+1.6) fix static block handling, would reduce memory usage for many equal blocks
+
 2) fix floor lighting
 
 3) fix line in the middle and outside of floors due to texture coords being non integer fix by flooring or by adding +1
@@ -14,14 +17,19 @@
 
 6) fix skybox line in the north east direction
 
-7) fix floors rendering behind abyss blocks, k
+7) fix floors rendering behind abyss blocks,
 
 10) consolidate config
 
 11) fix GitHub preview not working, or replace with something else to send a link to people
 
+12)refactor other classes to use getters
+
 20) better image loading, not lazy method,
 21) game shouldn't crash if an img load fails!
+
+22) generate floor and ceiling colour on the fly if non provided, based on image colour
+23) consider generating lower res textures (mipmapping?) from provided texture for far away textures. Improve performance? or just to remove jitter
 
 
 30) custom ray collision math => allows for complex wall shapes
