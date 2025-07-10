@@ -29,6 +29,8 @@ class FloorAndCeiling extends oldBlock{
             wall : false,
             passable : true,
             transparent : true,
+            floorImageName : "wall.png",
+            ceilingImageName : "wall.png",
 
             floorColour : [255,255,255,1], //floors and ceilings drawn as solid colour blocks, not textures due to performance cost
             ceilingColour : [125,125,125,1],//floors and ceilings drawn as solid colour blocks, not textures due to performance cost

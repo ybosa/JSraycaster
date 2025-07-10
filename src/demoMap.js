@@ -3,6 +3,7 @@ import Sprite from "./sprite.js";
 import {ABYSS, Air, FloorAndCeiling, Glass, oldBlock} from "./exampleblocks.js"
 import {CELL_SIZE} from "./config.js";
 import {Light} from "./light.js";
+import Block from "./block.js";
 
 function generateDemoMap(world){
     world.entities = new Set()
@@ -10,29 +11,47 @@ function generateDemoMap(world){
     world.lightMap = world.genLightMap(world.map)
     const map = world.map
 
-
     const air = new Air()
-    let stoneWall = new oldBlock({wallImageName:"wall.png"})
+    let stoneWall = new Block({wallImageName:"wall.png"})
     // stoneWall.ceiling = true //fixme causes glitch block on side not rendering when going through a narrow gap
     // stoneWall.floor = true //fixme causes glitch block on side not rendering when going through a narrow gap
-    let rubble = new oldBlock({wallImageName:"rubble.png"})
+    let rubble = new Block({wallImageName:"rubble.png"})
 
-    let stoneFloorRoofW = new FloorAndCeiling({
+    let stoneFloorRoofW = new Block({
+        passable: true,
+        transparent:true,
+        ceiling:true,
+        floor:true,
+        wall:false,
+
         floorColour :[200,200,200,1],
         ceilingColour : [200,200,200,1],
-        wallImageName:"white.png"
+        ceilingImageName:"white.png",
+        floorImageName:"white.png"
     })
 
-    let stoneFloorRoofB = new FloorAndCeiling({
+    let stoneFloorRoofB = new Block({
+        passable: true,
+        transparent:true,
+        ceiling:true,
+        floor:true,
+        wall:false,
         floorColour :[200,200,200,1],
         ceilingColour : [50,50,50,1],
-        wallImageName:"black.png"
+
+        ceilingImageName:"white.png",
+        floorImageName:"black.png"
     })
 
-    let bars = new Glass({
+    let bars = new Block({
+        transparent:true,
+        ceiling:true,
+        floor:true,
         floorColour :[166,152,143,1],
         ceilingColour : [125,123,112,1],
-        wallImageName:"bars.png"
+        wallImageName:"bars.png",
+        ceilingImageName:"rubble.png",
+        floorImageName:"rubble.png"
     })
 
     fillArea(map,air,0,49,0,49)
@@ -40,12 +59,17 @@ function generateDemoMap(world){
     //prison
     fillAreaWithFunc(map,()=>{
         const delta = 10
-        return new FloorAndCeiling({
+        return new Block({
+            ceiling:true,
+            floor:true,
+            wall:false,
+
             floorColour: [166 - delta / 2 + Math.random() * delta, 152 - delta / 2 + Math.random() * delta, 143 - delta / 2 + Math.random() * delta, 1],
             ceilingColour: [125 - delta / 2 + Math.random() * delta, 123 - delta / 2 + Math.random() * delta, 112 - delta / 2 + Math.random() * delta, 1],
-            wallImageName: "rubble.png",
             passable: true,
             transparent: true,
+            ceilingImageName:"rubble.png",
+            floorImageName:"rubble.png"
         })
 
     },7,19,3,9)
@@ -66,36 +90,47 @@ function generateDemoMap(world){
     //garden
     fillAreaWithFunc(map,()=>{
         const delta = 25
-        return new FloorAndCeiling({
+        return new Block({
+            floor:true,
+            wall:false,
             ceiling: false,
             floorColour: [155 - delta / 2 + Math.random() * delta, 155 - delta / 2 + Math.random() * delta, 155 - delta / 2 + Math.random() * delta, 1],
-            wallImageName: "gravel.png",
             passable: true,
             transparent: true,
+            ceilingImageName:"gravel.png",
+            floorImageName:"gravel.png"
         })
 
     },5,21,23,34)
-    let gravelFloor = new FloorAndCeiling({
+    let gravelFloor = new Block({
+        floor:true,
+        wall:false,
         ceiling: false,
         floorColour: [155 ,155,155,1],
-        wallImageName: "gravel.png",
         passable: true,
         transparent: true,
+        ceilingImageName:"gravel.png",
+        floorImageName:"gravel.png"
     })
 
     fillArea(map,gravelFloor,7,19,25,32)
 
 
-    let pillar = new oldBlock({wallImageName:"pillar.png"})
+    let pillar = new Block({wallImageName:"pillar.png"})
 
     drawPerim(map,ABYSS,4,22,20,35)
     map[21][5] = stoneWall; map[21][21] = stoneWall;
     fillAltArea(map,null,pillar,8,18,22,22)
 
-    let leaves = new oldBlock(
+    let leaves = new Block(
         {wallImageName:"leaves.png",
         wall:true,
-        transparent: true
+
+        transparent:true,
+        ceiling:true,
+        floor:true,
+            ceilingImageName:"leaves.png",
+            floorImageName:"gravel.png"
         }
     )
     drawPerim(map,leaves,7,19,25,32)
@@ -123,14 +158,19 @@ function generateDemoMap(world){
     fillAltArea(map,pillar,null,8,18,19,19)
 
     //disco room
-    let white = new oldBlock({wallImageName:"white.png"})
+    let white = new Block({wallImageName:"white.png"})
 
-    let whiteFloor = new FloorAndCeiling({
+    let whiteFloor = new Block({
+        wall:false,
+        ceiling:true,
+        floor:true,
         wallImageName:"white.png",
         ceilingColour : [255,255,255,1],
         floorColour : [255,255,255,1],
         passable: true,
         transparent: true,
+        ceilingImageName:"white.png",
+        floorImageName:"white.png"
     })
     fillArea(map,whiteFloor,22,30,12,20)
     drawPerim(map,white,22,30,12,20)
@@ -143,8 +183,16 @@ function generateDemoMap(world){
     drawRow(map,ABYSS,9,1,5)
     drawRow(map,ABYSS,20,0,5)
     drawCol(map,ABYSS,5,9,20)
-    let stoneTile = new FloorAndCeiling(
-        {ceiling : false, floorColour: [155,155,155,1]}
+    let stoneTile = new Block(
+        {
+            passable: true,
+            transparent:true,
+            floor:true,
+            wall:false,
+            ceiling : false,
+            floorImageName:"gravel.png",
+            floorColour: [155,155,155,1]}
+
     )
 
     drawCol(map,stoneTile,2,12,16)
@@ -166,10 +214,17 @@ function generateDemoMap(world){
     fillAltArea(map,stoneFloorRoofW,stoneFloorRoofB,13,13,9,11)
     fillAreaWithFunc(map,()=>{
         const delta = 10
-        return new FloorAndCeiling({
+        return new Block({
             floorColour: [166 - delta / 2 + Math.random() * delta, 152 - delta / 2 + Math.random() * delta, 143 - delta / 2 + Math.random() * delta, 1],
             ceilingColour: [125 - delta / 2 + Math.random() * delta, 123 - delta / 2 + Math.random() * delta, 112 - delta / 2 + Math.random() * delta, 1],
-            wallImageName: "rubble.png"
+            wallImageName: "rubble.png",
+            ceilingImageName:"rubble.png",
+            floorImageName:"rubble.png",
+            passable: true,
+            transparent:true,
+            ceiling:true,
+            wall:false,
+            floor:true,
         })
     },13,13,9,9)
     world.placeLight(new Light(13*CELL_SIZE,9*CELL_SIZE,CELL_SIZE,[0,0,0,0.5],0))

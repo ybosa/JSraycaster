@@ -77,7 +77,11 @@ class view {
         this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if(!cell) return
-
+                if(! (cell instanceof Block)){
+                    console.error("cell is not a block: x" + x +", y" + y );
+                    console.error(cell)
+                    return;
+                }
 
                 if(cell.isFloor()){
                     this.context.fillStyle =Light.colourToRGBA( Light.applyLightColourToBlock(cell.getFloorColour(),this.world.getLightColour(x,y)))

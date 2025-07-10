@@ -51,5 +51,15 @@ describe("Test Block", ()=>{
 
     })
 
+    test('The template Block class can not be instantiated as a static block', ()=>{
+
+        const block1 = new Block({staticBlock: true,ceiling:true})
+        const block2 = new Block({staticBlock: true,ceiling:false})
+
+        expect(block1 !== block2)
+        expect(block1.isCeiling() !== block2.isCeiling())
+
+    })
+
 
 })

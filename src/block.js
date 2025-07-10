@@ -1,5 +1,5 @@
 "use strict";
-//abstract block class is not intended to be used directly in game
+//Template Block class is not intended to be used directly in game, if you do it will always be non-static to allow for many different instantiations of individual blocks!
 class Block {
     static #staticBlockClassesMap = new Map()
 
@@ -68,6 +68,9 @@ class Block {
         }
         if(!BlockClass instanceof Block ){
             throw new Error("Cannot instantiate an non block class as a block!")
+        }
+        if(BlockClass === Block){
+            blockData.staticBlock = false; //all instantiations of the block class are non-static so they can allow for custom blocks!
         }
 
 
