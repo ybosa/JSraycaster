@@ -10,11 +10,11 @@
 #1.7) fix demo map, need to redo all new blocks to fix errors
 
 
-2) fix floor lighting
+#2) fix floor lighting
 
 3) fix line in the middle and outside of floors due to texture coords being non integer fix by flooring or by adding +1
 
-4) make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance.
+4) make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance. Floor lighting should only be done once!
 
 5) set max depth for transparent textures, consider a non transparent variant after second or (N) layer?
 5.1) fix transparent tiles not rendering rear wall!

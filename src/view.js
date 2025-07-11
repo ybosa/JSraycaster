@@ -147,8 +147,9 @@ class view {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch, may just need to be true
                     if (block.isFloor()){
+                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
                         //draw floors
-                        this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true);
+                        this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true,lightValue);
                         if(DEBUG_MODE)
                         this.debugDrawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true);
                         if (!drawnFloors[useful.mapY]) {
@@ -162,8 +163,9 @@ class view {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch, may just need to be true
                     if (block.isCeiling()){
+                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
                         //draw ceilings
-                        this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false);
+                        this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false,lightValue);
                         if(DEBUG_MODE)
                         this.debugDrawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false);
                         if (!drawnCeilings[useful.mapY]) {
@@ -752,7 +754,7 @@ class view {
      * @param MapX block x coord in map array
      * @param floor (true) if drawing a floor, false if drawing a ceiling
      */
-    drawATexturedFloorOrCeiling(MapY,MapX,floor){
+    drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue){
         const ctx = this.context;
         ctx.save();
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
@@ -785,6 +787,7 @@ class view {
             const dstTri = [{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}, {x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}];
 
             this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+            if(lightValue) this.drawSolidColourShape(ctx,lightValue,TL_BlockScreenCord, TR_BlockScreenCord, BL_BlockScreenCord)
 
 
         }
@@ -799,6 +802,7 @@ class view {
             const dstTri = [{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}];
 
             this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+            if(lightValue) this.drawSolidColourShape(ctx,lightValue,BR_BlockScreenCord, BL_BlockScreenCord, TR_BlockScreenCord)
         }
 
         if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
@@ -810,6 +814,7 @@ class view {
                 const dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
 
                 this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                if(lightValue) this.drawSolidColourShape(ctx,lightValue,TR_BlockScreenCord, TL_BlockScreenCord, BR_BlockScreenCord)
 
             }
             else if(BL_BlockScreenCord_Is_Valid){
@@ -820,10 +825,25 @@ class view {
                 const dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
 
                 this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                if(lightValue) this.drawSolidColourShape(ctx,lightValue,BL_BlockScreenCord, BR_BlockScreenCord, TL_BlockScreenCord)
             }
         }
-
         ctx.restore();
+    }
+
+    drawSolidColourShape(ctx,colourValue,...positions){
+        if(!colourValue) return
+        if(positions.length < 1) return;
+
+        ctx.beginPath();
+        ctx.moveTo(positions[0].i, positions[0].j);// DRAWING ON SCREEN COORDS
+
+        for(let index = 1; index < positions.length; index++) {
+            ctx.lineTo(positions[index].i, positions[index].j);// DRAWING ON SCREEN COORDS
+        }
+        ctx.closePath();
+        ctx.fillStyle = colourValue;
+        ctx.fill();
     }
 
     drawAffineTriangleGeneral(ctx, img, srcTri, dstTri) {
