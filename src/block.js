@@ -4,7 +4,7 @@ class Block {
     static #staticBlockClassesMap = new Map()
 
     #invisible = false; //invisible blocks are not drawn FIXME not handled correctly
-    #drawBackgroundImgInstead = false // terminates draw and draws the background image where the wall would be
+    #drawBackgroundImgInstead = false; // terminates draw and draws the background image where the wall would be
 
     #transparent = false;//if block is transparent, ray will draw it and blocks behind
 
@@ -107,6 +107,21 @@ class Block {
             this.#ceilingImageName = (blockData.hasOwnProperty("ceilingImageName")) ? blockData.ceilingImageName : this.#ceilingImageName;
             this.#ceilingColour = (blockData.hasOwnProperty("ceilingColour")) ? blockData.ceilingColour : this.#ceilingColour;
             this.#drawBackgroundImgInstead = (blockData.hasOwnProperty("drawBackgroundImgInstead")) ? blockData.drawBackgroundImgInstead : this.#drawBackgroundImgInstead;
+
+
+            //Fix issue with gaps between wall and floor by drawing wall image as the floor image!
+            if(this.isWall() && !(this.isTransparent() || this.isInvisible() || this.isDrawBackgroundImgInstead())){
+                if(!this.isFloor()){
+                    this.#floor = true;
+                    //fixme does not calc floor colour
+                    this.#floorImageName = this.getWallImageName()
+                }
+                if(!this.isCeiling()){
+                    this.#ceiling = true;
+                    //fixme does not calc ceiling colour
+                    this.#ceilingImageName = this.getWallImageName();
+                }
+            }
         }
     }
 }
