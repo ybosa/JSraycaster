@@ -1,0 +1,29 @@
+{
+  "name": "jsraycaster",
+  "version": "0.0.1",
+  "description": "A HD Js Raycaster Game Engine",
+  "homepage": "https://github.com/ybosa/JSraycaster#readme",
+  "bugs": {
+    "url": "https://github.com/ybosa/JSraycaster/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ybosa/JSraycaster.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "jest": {
+    "transform": {}
+  },
+  "main": "index.html",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "devDependencies": {
+    "jest": "^30.0.4"
+  }
+}

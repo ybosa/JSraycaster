@@ -1,6 +1,14 @@
 "use strict"
-import {CELL_SIZE, DEBUG_MODE, IMAGE_PATH, MAX_RAY_DEPTH, MAX_RAYS, MINIMAP} from "./config.js";
-import {ABYSS} from "./block.js";
+import {
+    CELL_SIZE,
+    DEBUG_MODE,
+    FLOOR_TEXTURED_DRAW_MAX_DIST,
+    IMAGE_PATH,
+    MAX_RAY_DEPTH,
+    MAX_RAYS,
+    MINIMAP
+} from "./config.js";
+import Block from "./block.js";
 import Light from "./light.js";
 
 let COLORS = {
@@ -69,14 +77,18 @@ class view {
         this.map.forEach((row, y) => {
             row.forEach((cell, x) => {
                 if(!cell) return
+                if(! (cell instanceof Block)){
+                    console.error("cell is not a block: x" + x +", y" + y );
+                    console.error(cell)
+                    return;
+                }
 
-
-                if(cell.floor){
-                    this.context.fillStyle =Light.colourToRGBA( Light.applyLightColourToBlock(cell.floorColour,this.world.getLightColour(x,y)))
+                if(cell.isFloor()){
+                    this.context.fillStyle =Light.colourToRGBA( Light.applyLightColourToBlock(cell.getFloorColour(),this.world.getLightColour(x,y)))
                     this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
                 }
-                else if(cell.wall)
-                    this.context.drawImage(getImage(cell.imageName), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
+                else if(cell.isWall())
+                    this.context.drawImage(getImage(cell.getWallImageName()), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
             });
         });
         this.context.fillStyle = "blue";
@@ -113,8 +125,67 @@ class view {
     renderScene(rays) {
         this.drawSkybox(getImage(this.world.sky))
         const pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+        const drawnFloors = []
+        const drawnCeilings = []
+
+
+        //draw textured floors
+        rays.forEach((ray) => {
+            let previousBlock = ray.blocks[ray.blocks.length - 1]
+            for (let j = ray.blocks.length - 1; j >= 0; j--) {
+                const useful = ray.blocks[j]
+                const block = useful.block
+                if(!(block instanceof Block)){
+                    // console.warn("useful.block needs to be renamed! not all of these are blocks!")
+                    continue
+                }
+
+                const distance = this.distance(useful.mapX*CELL_SIZE,useful.mapY*CELL_SIZE,this.player.x,this.player.y)
+                if (distance > FLOOR_TEXTURED_DRAW_MAX_DIST*CELL_SIZE && FLOOR_TEXTURED_DRAW_MAX_DIST >= 0) continue;
+
+                if(!(drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
+                    //draw floors and ceilings, and lack thereof (as
+                    //FIXME debug entry condition to this branch, may just need to be true
+                    if (block.isFloor()){
+                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        //draw floors
+                        this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true,lightValue);
+                        if(DEBUG_MODE)
+                        this.debugDrawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true);
+                        if (!drawnFloors[useful.mapY]) {
+                            drawnFloors[useful.mapY] = []
+                        }
+                        drawnFloors[useful.mapY][useful.mapX] = true;
+                    }
+                }
+
+                if(!(drawnCeilings[useful.mapY] && drawnCeilings[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
+                    //draw floors and ceilings, and lack thereof (as
+                    //FIXME debug entry condition to this branch, may just need to be true
+                    if (block.isCeiling()){
+                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        //draw ceilings
+                        this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false,lightValue);
+                        if(DEBUG_MODE)
+                        this.debugDrawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false);
+                        if (!drawnCeilings[useful.mapY]) {
+                            drawnCeilings[useful.mapY] = []
+                        }
+                        drawnCeilings[useful.mapY][useful.mapX] = true;
+                    }
+                }
+                previousBlock = useful
+            }
+
+        });
+
         //render rays
         rays.forEach((ray, i) => {
+            //TODO skip floor drawing should be changed to average colours, for long distance rendering!
+            //TODO solid colour drawing is faster via the triangle method for individual tiles,
+            //TODO only should use the skip draw method when drawing many at once, eg long distance average colour which is faster (and no gaps for ray spacing)
+
+            //this should be used to average colour out when not drawing a textured floor!
             //floor drawing variables
             let skipDrawFloorLine = this.SCREEN_HEIGHT/2
             let skipDrawFloor = false
@@ -131,14 +202,18 @@ class view {
                 const useful = ray.blocks[j]
                 const block = useful.block
                 //ignore out of bounds or invisible blocks
-                if (block.invisible || block === ABYSS) continue
                 if(block.sprite) {
                     this.drawSprite(ray, i, useful)
                     continue
                 }
+                if (block.isInvisible() || block.isDrawBackgroundImgInstead()) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
+
                 //draw floors and ceilings, and lack thereof (as
                 //FIXME debug entry condition to this branch, may just need to be true
-                if ((block.floor || block.ceiling ) || (!block.wall && !block.floor && !block.ceiling) || block.transparent) {
+                if ((block.isFloor() || block.isCeiling() ) || (!block.isWall() && !block.isFloor() && !block.isCeiling()) || block.isTransparent()) {
+                    const floorHasBeenDrawnAsATexture = (drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX]);
+                    const ceilingHasBeenDrawnAsATexture = (drawnCeilings[useful.mapY] && drawnCeilings[useful.mapY][useful.mapX]);
+
                     //fix overdrawing ray bounds
                     let drawHorizStart = Math.floor(i *pixelWidth)
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
@@ -156,14 +231,18 @@ class view {
                     const drawDist = drawEnd - drawStart
 
                     //get the next block
+                    let nextFloorHasBeenDrawnAsATexture = false;
+                    let nextCeilingHasBeenDrawnAsATexture = false;
                     let nextBlockFloorColour = null
                     let nextBlockCeilingColour = null
                     let nextBlockLightColour = null
                     for(let k = j-1; k >=0; k-- ){
-                        if(ray.blocks[k].block.block === true){
-                            nextBlockFloorColour = ray.blocks[k].block.floorColour
-                            nextBlockCeilingColour = ray.blocks[k].block.ceilingColour
+                        if(ray.blocks[k].block instanceof Block){
+                            nextBlockFloorColour = ray.blocks[k].block.getFloorColour()
+                            nextBlockCeilingColour = ray.blocks[k].block.getCeilingColour()
                             nextBlockLightColour = this.world.getLightColour(ray.blocks[k].mapX,ray.blocks[k].mapY)
+                            nextFloorHasBeenDrawnAsATexture = (drawnFloors[ray.blocks[k].mapY] && drawnFloors[ray.blocks[k].mapY][ray.blocks[k].mapX])
+                            nextCeilingHasBeenDrawnAsATexture = (drawnCeilings[ray.blocks[k].mapY] && drawnCeilings[ray.blocks[k].mapY][ray.blocks[k].mapX])
                             break
                         }
                     }
@@ -175,16 +254,16 @@ class view {
                     if (DEBUG_MODE) {
                         //DRAW THE FLOOR BLOCK
                         //activate skip draw, don't skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        if(!skipDrawFloor && !block.wall && noLightColourDiff && block.floor && block.floorColour === nextBlockFloorColour && j!==0){
+                        if(!skipDrawFloor && !block.isWall() && noLightColourDiff && block.isFloor() && block.getFloorColour() === nextBlockFloorColour && j!==0 && !floorHasBeenDrawnAsATexture && !nextFloorHasBeenDrawnAsATexture){
                             skipDrawFloorLine =drawStart
                             skipDrawFloor = true
                             skipDrawFloorCount += drawDist;
-                            skipDrawFloorColour = block.floorColour
+                            skipDrawFloorColour = block.getFloorColour()
 
                         }
                         //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
                         //stop when current block is a wall (eg glass) so we dont overdraw the block
-                        else if(skipDrawFloor && !block.wall && noLightColourDiff && j!==0 && block.floor && block.floorColour === skipDrawFloorColour){
+                        else if(skipDrawFloor && !block.isWall() && noLightColourDiff && j!==0 && block.isFloor() && block.getFloorColour() === skipDrawFloorColour && !floorHasBeenDrawnAsATexture){
                             skipDrawFloorCount += drawDist;
                         }
                         //end skipDraw
@@ -197,7 +276,7 @@ class view {
                                 skipDrawFloorCount =0;
                             }
                             //draw tile
-                            if (block.floor) {
+                            if (block.isFloor() && !floorHasBeenDrawnAsATexture) {
                                 this.context.strokeStyle = 'yellow';
                                 this.context.strokeRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
                             }
@@ -208,16 +287,16 @@ class view {
                     //otherwise, draw floor regularly
                     else {
                         //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        if (!skipDrawFloor && !block.wall && noLightColourDiff && block.floor && block.floorColour === nextBlockFloorColour && j!==0) {
+                        if (!skipDrawFloor && !block.isWall() && noLightColourDiff && block.isFloor() && block.getFloorColour() === nextBlockFloorColour && j!==0 && !floorHasBeenDrawnAsATexture && !nextFloorHasBeenDrawnAsATexture) {
                             skipDrawFloorLine = drawStart
                             skipDrawFloor = true
                             skipDrawFloorCount += drawDist;
-                            skipDrawFloorColour = block.floorColour
+                            skipDrawFloorColour = block.getFloorColour()
 
                         }
                         //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
                             //stop when current block is a wall (eg glass) so we dont overdraw the block
-                        else if (skipDrawFloor && !block.wall && noLightColourDiff && j!==0 && block.floor && block.floorColour === skipDrawFloorColour) {
+                        else if (skipDrawFloor && !block.isWall() && noLightColourDiff && j!==0 && block.isFloor() && block.getFloorColour() === skipDrawFloorColour && !floorHasBeenDrawnAsATexture) {
                             skipDrawFloorCount += drawDist;
                         }
                         //end skipDraw
@@ -230,8 +309,8 @@ class view {
                                 skipDrawFloorCount = 0;
                             }
                             //draw large tile
-                            if (block.floor) {
-                                this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.floorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
+                            if (block.isFloor() && !floorHasBeenDrawnAsATexture) {
+                                this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.getFloorColour(),this.world.getLightColour(useful.mapX,useful.mapY)));
                                 this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
                             }
                         }
@@ -242,16 +321,16 @@ class view {
 
                     //DRAW THE CEILING BLOCK
                     //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                    if(!skipDrawCeiling && !block.wall && block.ceiling && noLightColourDiff && block.ceilingColour ===nextBlockCeilingColour && j!==0 ){
+                    if(!skipDrawCeiling && !block.isWall() && block.isCeiling() && noLightColourDiff && block.getCeilingColour() ===nextBlockCeilingColour && j!==0 && !ceilingHasBeenDrawnAsATexture && !nextCeilingHasBeenDrawnAsATexture){
                         skipDrawCeilingLine = drawStart
                         skipDrawCeiling = true
                         skipDrawCeilingCount += Math.abs(drawDist);
-                        skipDrawCeilingColour = block.ceilingColour
+                        skipDrawCeilingColour = block.getCeilingColour()
 
                     }
                     //continueSkipDraw, stop when j == 0, so we don't get missed draws
                     //stop when current block is a wall (eg glass) so we dont overdraw the block
-                    else if(skipDrawCeiling && !block.wall && j!==0 && block.ceiling && noLightColourDiff && block.ceilingColour === skipDrawCeilingColour ){
+                    else if(skipDrawCeiling && !block.isWall() && j!==0 && block.isCeiling() && noLightColourDiff && block.getCeilingColour() === skipDrawCeilingColour && !ceilingHasBeenDrawnAsATexture){
                         skipDrawCeilingCount += Math.abs(drawDist);
                     }
                     //end skipDraw
@@ -267,15 +346,15 @@ class view {
 
                             skipDrawCeilingCount =0;
                         }
-                        if(block.ceiling) {
-                            this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.ceilingColour,this.world.getLightColour(useful.mapX,useful.mapY)))
+                        if(block.isCeiling() && !ceilingHasBeenDrawnAsATexture) {
+                            this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.getCeilingColour(),this.world.getLightColour(useful.mapX,useful.mapY)))
                             this.context.fillRect(drawHorizStart, this.SCREEN_HEIGHT - drawStart - drawDist, drawWidth, drawDist + 1);
                         }
                     }
 
                     previousBlock = useful
                 }
-                if(block.wall)
+                if(block.isWall())
                     this.drawWall(ray, i, useful)
 
                 previousBlock = useful
@@ -290,7 +369,7 @@ class view {
         let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
-        let img = getImage(block.imageName)
+        let img = getImage(block.getWallImageName())
 
         //process image sampling
         let sampleImageHorizontal = Math.abs(Math.floor(useful.horizontalSample * img.width))
@@ -431,8 +510,7 @@ class view {
             }
             //check if out of bounds
             if (this.world.outOfMapBounds(mapX, mapY)) {
-                let block = ABYSS
-                blocks.push({block, distance})
+                //fixme need to add a block here that tells it to redraw the background for the wall so you cant see a floor or ceiling behind it!
                 return {
                     angle,
                     blocks: blocks
@@ -453,12 +531,12 @@ class view {
             }
 
             //Not out of bounds so add current block to array (ignore invisible blocks
-            if (!this.map[mapY][mapX].invisible) {
+            if (!this.map[mapY][mapX].isInvisible()) {
                 let horizontalSample = 0;
                 let hSampleWidth  = 0;
                 let light = this.world.getLightColour(mapX,mapY)
                 //only bother to sample textures for walls
-                if(this.map[mapY][mapX].wall){
+                if(this.map[mapY][mapX].isWall()){
                     horizontalSample = (vertical) ? this.calcSample(vertical, distance, angle, mapY,right,up) : this.calcSample(vertical, distance, angle, mapX,right,up);
 
                     const addAHwall = ((vertical && !right)) ? 1 : 0
@@ -471,7 +549,7 @@ class view {
                     hSampleWidth = NextHorizontalSample - horizontalSample;
 
                     //light level illuminating this non-transparent block is from previous one
-                    if(!this.map[mapY][mapX].transparent)
+                    if(!this.map[mapY][mapX].isTransparent())
                         light = blocks[blocks.length -1].light
 
                 }
@@ -479,7 +557,7 @@ class view {
             }
 
             //Check if ray has hit a wall, end raycast.
-            if (!this.map[mapY][mapX].transparent) {
+            if (!this.map[mapY][mapX].isTransparent()) {
                 return {
                     angle,
                     blocks: blocks
@@ -572,6 +650,414 @@ class view {
         //[px]height of wall
         return CELL_SIZE * this.SCREEN_HEIGHT / distance;
     }
+
+    /**
+     * Function that draws either a ceiling or floor on the screen, for the given map coords, in DEBUG colours
+     * relative to the players view
+     * @param MapY block y coord in map array
+     * @param MapX block x coord in map array
+     * @param floor (true) if drawing a floor, false if drawing a ceiling
+     */
+    debugDrawATexturedFloorOrCeiling(MapY,MapX,floor){
+
+        const ctx = this.context;
+        ctx.save()
+        const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
+        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
+        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY,floor)
+        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1,floor)
+
+        const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
+        const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
+        const TR_BlockScreenCord_Is_Valid = this.validateScreenCord(TR_BlockScreenCord,floor);
+        const BR_BlockScreenCord_Is_Valid = this.validateScreenCord(BR_BlockScreenCord,floor);
+
+
+        const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
+        const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
+
+        // if(valid) return
+        // if(!validred  && !validblue) {
+        //     console.log("invalid draw vred: " +validred + " vblue: " +validred  )
+        //     console.log("x: "+MapX + " y: "+MapY)
+        //     console.log("player x: "+player.x / CELL_SIZE + " player y: "+player.y / CELL_SIZE)
+        //     console.log("TL i " + TL_BlockScreenCord.i +" j " + TL_BlockScreenCord.j + " angle " + TL_BlockScreenCord.angle + " distance "+ TL_BlockScreenCord.distance)
+        //     console.log("BL i " + BL_BlockScreenCord.i +" j " + BL_BlockScreenCord.j + " angle " + BL_BlockScreenCord.angle + " distance "+ BL_BlockScreenCord.distance)
+        //     console.log("TR i " + TR_BlockScreenCord.i +" j " + TR_BlockScreenCord.j + " angle " + TR_BlockScreenCord.angle + " distance "+ TR_BlockScreenCord.distance)
+        //     console.log("BR i " + BR_BlockScreenCord.i +" j " + BR_BlockScreenCord.j + " angle " + BR_BlockScreenCord.angle + " distance "+ BR_BlockScreenCord.distance)
+        //     console.log("###########\n")
+        // }
+
+        //triangle
+
+
+        if(TL_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            TR_BlockScreenCord_Is_Valid) {
+            ctx.beginPath();
+            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.closePath();
+            ctx.fillStyle = "blue"; //both are good
+            if(!validred) ctx.fillStyle = "darkblue" // red cant be drawn blue can
+            ctx.fill();
+        }
+        if(TR_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            BR_BlockScreenCord_Is_Valid) {
+            ctx.beginPath();
+            ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+            ctx.closePath();
+            ctx.fillStyle = "red"; //both are good
+            if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
+            ctx.fill();
+        }
+        if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
+            if(TR_BlockScreenCord_Is_Valid){
+               ctx.beginPath();
+                ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+
+
+                ctx.closePath();
+                ctx.fillStyle = "yellow";
+                ctx.fill();
+
+            }
+            else if(BL_BlockScreenCord_Is_Valid){
+                ctx.beginPath();
+                ctx.moveTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+
+
+                ctx.closePath();
+                ctx.fillStyle = "orange";
+                ctx.fill();
+
+            }
+
+
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Function that draws either a ceiling or floor on the screen, for the given map coords,
+     * relative to the players view
+     * @param MapY block y coord in map array
+     * @param MapX block x coord in map array
+     * @param floor (true) if drawing a floor, false if drawing a ceiling
+     */
+    drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue){
+        const ctx = this.context;
+        ctx.save();
+        const distance = this.distance(this.player.x,this.player.y,MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;
+
+        const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
+        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
+        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY,floor)
+        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1,floor)
+
+        const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
+        const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
+        const TR_BlockScreenCord_Is_Valid = this.validateScreenCord(TR_BlockScreenCord,floor);
+        const BR_BlockScreenCord_Is_Valid = this.validateScreenCord(BR_BlockScreenCord,floor);
+
+
+        const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
+        const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
+
+
+        //triangle
+        const block = this.map[MapY][MapX]
+        const image = (floor) ? getImage(block.getFloorImageName() ): getImage(block.getCeilingImageName());
+
+        if(TL_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            TR_BlockScreenCord_Is_Valid) {
+
+            const s0 = {x:0,y:0}
+            const s1 = {x:image.width,y:0}
+            const s2 =  {x:0,y:image.height}
+            const srcTri = [s0, s1, s2];
+            let dstTri = [{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}, {x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}];
+            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+            if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+
+
+        }
+        if(TR_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            BR_BlockScreenCord_Is_Valid) {
+
+            const s0 = {x:image.width,y:image.height}
+            const s1 = {x:0,y:image.height}
+            const s2 =  {x:image.width,y:0}
+            const srcTri = [s0, s1, s2];
+            let dstTri = [{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}];
+            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+            if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+        }
+
+        if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
+            if(TR_BlockScreenCord_Is_Valid){
+                const s0 = {x:image.width,y:0}
+                const s1 = {x:0,y:0}
+                const s2 = {x:image.width,y:image.height}
+                const srcTri = [s0, s1, s2];
+                let dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
+                dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+
+            }
+            else if(BL_BlockScreenCord_Is_Valid){
+                const s0 = {x:0,y:image.height}
+                const s1 = {x:image.width,y:image.height}
+                const s2 = {x:0,y:0}
+                const srcTri = [s0, s1, s2];
+                let dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
+                dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+            }
+        }
+        ctx.restore();
+    }
+
+    drawSolidColourShape(ctx,colourValue,positions){
+        if(!colourValue) return
+        if(positions.length < 1) return;
+
+        ctx.beginPath();
+        ctx.moveTo(positions[0].x, positions[0].y);// DRAWING ON SCREEN COORDS
+
+        for(let index = 1; index < positions.length; index++) {
+            ctx.lineTo(positions[index].x, positions[index].y);// DRAWING ON SCREEN COORDS
+        }
+        ctx.closePath();
+        ctx.fillStyle = colourValue;
+        ctx.fill();
+    }
+
+    nudgeTriangleOutward(dstTri, distance) {
+        const [p0, p1, p2] = dstTri;
+        let amount = 1  + distance//0.5
+
+        if(amount > 5)
+            amount = 5 //FIXME consider limiting max size of nudge , also floor the ammount?
+
+        // Compute centroid
+        const cx = (p0.x + p1.x + p2.x) / 3;
+        const cy = (p0.y + p1.y + p2.y) / 3;
+
+        // // Check for degenerate triangle (near-zero area)
+        // const area = Math.abs(
+        //     (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y)
+        // ) * 0.5;
+        // if (area < 0.01) {
+        //     // Triangle is too small or flat — skip adjustment
+        //     return dstTri;
+        // }
+
+        // Nudge each point outward from centroid by maxOffset (capped)
+        return dstTri.map(p => {
+            const dx = p.x - cx;
+            const dy = p.y - cy;
+            const len = Math.hypot(dx, dy) || 1;
+            return {
+                x: p.x + (dx / len) * amount,
+                y: p.y + (dy / len) * amount,
+            };
+        });
+    }
+
+    drawAffineTriangleGeneral(ctx, img, srcTri, dstTri) {
+        const [s0, s1, s2] = srcTri;
+        const [d0, d1, d2] = dstTri;
+
+        // Compute source vectors (from s0)
+        const sx1 = s1.x - s0.x;
+        const sy1 = s1.y - s0.y;
+        const sx2 = s2.x - s0.x;
+        const sy2 = s2.y - s0.y;
+
+        // Compute destination vectors (from d0)
+        const dx1 = d1.x - d0.x;
+        const dy1 = d1.y - d0.y;
+        const dx2 = d2.x - d0.x;
+        const dy2 = d2.y - d0.y;
+
+        ctx.save();
+
+        // Move to destination triangle origin
+        ctx.translate(d0.x, d0.y);
+
+        // Clip to destination triangle
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(dx1, dy1);
+        ctx.lineTo(dx2, dy2);
+        ctx.closePath();
+        ctx.clip();
+
+        // Build affine transform from source to destination
+        // Solve matrix A such that: A * (sx1, sy1) = (dx1, dy1)
+        //                           A * (sx2, sy2) = (dx2, dy2)
+        //
+        // So:
+        //   | a c |   *   | sx1 sx2 |   =   | dx1 dx2 |
+        //   | b d |       | sy1 sy2 |       | dy1 dy2 |
+
+        const det = sx1 * sy2 - sx2 * sy1;
+        if (det === 0) {
+            // console.warn("Degenerate triangle");
+            ctx.restore();
+            return;
+        }
+
+        const idet = 1 / det;
+
+        // Inverse matrix of source
+        const isx1 =  sy2 * idet;
+        const isy1 = -sy1 * idet;
+        const isx2 = -sx2 * idet;
+        const isy2 =  sx1 * idet;
+
+        // Final transform matrix = dest * inverse(src)
+        const a = dx1 * isx1 + dx2 * isx2;
+        const b = dy1 * isx1 + dy2 * isx2;
+        const c = dx1 * isy1 + dx2 * isy2;
+        const d = dy1 * isy1 + dy2 * isy2;
+        const e = -a * s0.x - c * s0.y;
+        const f = -b * s0.x - d * s0.y;
+
+        ctx.transform(a, b, c, d, e, f);
+
+        ctx.drawImage(img, 0, 0);
+
+        ctx.restore();
+    }
+
+    /**
+     * draws a circular point coordinate on the screen, used to debug
+     * @param ctx context object
+     * @param coord {i,j} coordinate object
+     * @param fill circle fill colour
+     * @param line circle line colour
+     */
+    drawAPoint(ctx,coord, fill, line){
+        const lw = ctx.lineWidth;
+        ctx.beginPath();
+        ctx.arc(coord.i,coord.j,30,0,2*Math.PI)
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = line;
+        ctx.stroke();
+
+
+        //reset line width
+        ctx.lineWidth = lw
+    }
+
+    /**
+     * Consideres a screen coordinate representing a point on either the floor or ceiling plates and returns true or false
+     * if that point was calculated correctly.
+     *
+     * @param coordinate screen coordinate {i,j} of pixel. i is horizontal, j is vertical (j=0 => top of screen)
+     * @param floor is this point on the floor plane (true) or ceiling plane (false)
+     * @returns {boolean} was this screen coordinate calculated correctly
+     */
+    validateScreenCord(coordinate,floor){
+        //a floor coordinate should not be above the screen, this implies a error (eg coord was behind player camera)
+        //likewise the ceiling coordinate should not be below the screen.
+
+        if(floor && coordinate.j < this.SCREEN_HEIGHT/2 - 1){
+            return false
+        }
+
+        if(!floor && coordinate.j > this.SCREEN_HEIGHT/2 +1){
+            return false
+        }
+
+        return true;
+    }
+
+    /**
+     * bad name here //FIXME
+     * takes the values of a {i,j} screen coordinate object and Math.floors them
+     * @param coordinate
+     * @returns {*}
+     */
+    floorScreenCord(coordinate){
+        coordinate.i = Math.floor(coordinate.i);
+        coordinate.j = Math.floor(coordinate.j);
+        //FIXME potential fix gaps bettween draws by adding +/- 1 px to the coordinates depending on side of screen?
+        // need to figure out if this is a issue first
+        return coordinate
+    }
+
+    /**
+     * Calculates the onscreen coordinates of a point, given its mapX mapY coords (array grid coords - allows decimal) in block
+     * and calculates where it would appear on the players screen.
+     * @param MapX map x coordinate, array grid coords can be a decimal
+     * @param MapY map y coordinate, array grid coords can be a decimal
+     * @param floor is the point on the floor plain (true) or the ceiling plane (false)
+     * @returns {*}
+     */
+    worldCordToScreenCord(MapX,MapY,floor){
+        const x = MapX * CELL_SIZE
+        const y = MapY * CELL_SIZE
+        //convert from position (x,y) to position(theta, distance)
+        const distance = this.distance(x,y,this.player.x,this.player.y)
+        let angle = Math.atan2(y-this.player.y,x-this.player.x)
+
+        if(!floor) angle =  Math.atan2(this.player.y-y,this.player.x-x)
+
+        //convert from position(theta, distance) to screen postion(i,j)
+        let alpha =  (angle - this.player.angle + FOV/2)
+
+        /* how angle correction works in ray cast
+        // let angleStep = FOV / this.numberOfRays;
+        let dAngle = Math.atan((i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  )
+        let angle = player.angle + dAngle
+        */
+
+        /*reverse correction to find i    (i is proportion of screen not pixels)
+        (i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  ) = tan (dangle)
+        (i - this.numberOfRays/2 ) = tan (dangle) / this.distanceBetweenRaysOnScreen
+        i = tan (dangle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
+
+        angle = player.angle + dAngle
+        dAngle = angle - player.angle
+
+        i = tan (angle - player.angle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
+
+        */
+
+
+        // let i = alpha/FOV * this.SCREEN_WIDTH / number of rays //fixme, distorted at angles to player, the error is that the delta between each ray is not constant!
+
+        let i = (Math.tan (angle - this.player.angle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2) * (this.SCREEN_WIDTH / this.numberOfRays)
+
+        let j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, this.player.angle)/2)
+
+        return this.floorScreenCord({i,j,angle,distance})
+    }
+
 }
 
 export function toRadians(deg) {

@@ -13,6 +13,7 @@ export let MINIMAP = false
 
 export const FLOOR_SKIP_DRAW_THRESHOLD = 1 //how many pixels high a floor tile must be before it is rendered
 export const FLOOR_SKIP_DRAW_MAX_DIST = 1 //how many floor pixels draw can skip before rendering
+export const FLOOR_TEXTURED_DRAW_MAX_DIST = 50; //how far should floor (and ceiling) blocks be rendered with textures before switching to solid colour draw
 
 export default {CELL_SIZE,GAME_TICK_RATE,SCREEN_TICK_RATE,MAX_RAYS,DEBUG_MODE,IMAGE_PATH,MAX_RAY_DEPTH,MINIMAP,FLOOR_SKIP_DRAW_THRESHOLD,FLOOR_SKIP_DRAW_MAX_DIST}
 

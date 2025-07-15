@@ -1,5 +1,5 @@
 "use strict";
-import {Block,FloorAndCeiling,Glass,Air, ABYSS} from "./block.js";
+import {FloorAndCeiling,Glass,Air, ABYSS,oldBlock} from "./exampleblocks.js";
 import {CELL_SIZE} from "./config.js";
 import LIGHT, {Light} from "./light.js";
 
@@ -23,7 +23,7 @@ class World{
             }
         }
 
-        return this.outOfMapBounds(mapX,mapY) || !this.map[mapY][mapX].passable
+        return this.outOfMapBounds(mapX,mapY) || !this.map[mapY][mapX].isPassable()
     }
 
     outOfMapBounds(mapX, mapY) {
@@ -31,13 +31,11 @@ class World{
     }
 
     genMap(x = 25,y=25){
-        let block = new Block()
-        block.imageName = "wall.png"
+        let block = new oldBlock({wallImageName:"wall.png"})
+
         let glass= new Glass()
 
-        let floor = new FloorAndCeiling()
-        floor.ceiling = true
-        floor.floor = true
+        let floor = new FloorAndCeiling({ceiling:false})
 
         let air = new Air()
         // air.invisible = false //FIXME
@@ -88,7 +86,7 @@ class World{
     placeLightHelper(light,mapX,mapY,i,visited){
         //FIXME DEBUG THE BOUNDARY AND STOPPING CONDITIONS
         if(!light || i < 0 || this.outOfMapBounds(mapX,mapY) ||
-            !this.map[mapY][mapX].transparent  )return
+            !this.map[mapY][mapX].isTransparent()  )return
 
         else if(!this.lightMap[mapY][mapX]) {
             let colour = light.calcColourAtDist(mapX*CELL_SIZE,mapY*CELL_SIZE);
@@ -152,7 +150,7 @@ class World{
         let lenX = this.map[0].length
         for(let i = 0; i < lenY; i++){
             for(let j = 0; j < lenX; j++){
-                if((this.map)[i][j].passable && (this.map)[i][j].ceiling  &&(this.map)[i][j].transparent && Math.random() < 0.05 ){
+                if((this.map)[i][j].isPassable() && (this.map)[i][j].isCeiling()  &&(this.map)[i][j].isTransparent() && Math.random() < 0.05 ){
                     this.placeLight(new Light((j+0.5)*CELL_SIZE, (i+0.5)*CELL_SIZE, 10*CELL_SIZE, [255,125,125,0.25],0.25))
                 }
             }
