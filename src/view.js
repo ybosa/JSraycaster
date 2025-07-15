@@ -856,6 +856,8 @@ class view {
         const [p0, p1, p2] = dstTri;
         let amount = 1  + distance//0.5
 
+        if(amount > 5)
+            amount = 5 //FIXME consider limiting max size of nudge , also floor the ammount?
 
         // Compute centroid
         const cx = (p0.x + p1.x + p2.x) / 3;
