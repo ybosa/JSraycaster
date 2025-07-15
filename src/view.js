@@ -145,9 +145,15 @@ class view {
 
                 if(!(drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
                     //draw floors and ceilings, and lack thereof (as
-                    //FIXME debug entry condition to this branch, may just need to be true
+                    //FIXME debug entry condition to this branch
                     if (block.isFloor()){
-                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+
+                        //this is a correction for non-transparent walls, the floor underneath filing the gap btw wall, and prev blocks floor needs to use prev blocks light
+                        if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
+                            lightValue = 'rgba(' + previousBlock.light[0] + ',' + previousBlock.light[1] + ',' + previousBlock.light[2] + ',' + previousBlock.light[3] + ')'
+                        }
+
                         //draw floors
                         this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true,lightValue);
                         if(DEBUG_MODE)
@@ -161,9 +167,14 @@ class view {
 
                 if(!(drawnCeilings[useful.mapY] && drawnCeilings[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
                     //draw floors and ceilings, and lack thereof (as
-                    //FIXME debug entry condition to this branch, may just need to be true
+                    //FIXME debug entry condition to this branch
                     if (block.isCeiling()){
-                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        //this is a correction for non-transparent walls, the ceiling underneath filing the gap btw wall, and prev blocks ceiling needs to use prev blocks light
+                        if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
+                            lightValue = 'rgba(' + previousBlock.light[0] + ',' + previousBlock.light[1] + ',' + previousBlock.light[2] + ',' + previousBlock.light[3] + ')'
+                        }
+
                         //draw ceilings
                         this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false,lightValue);
                         if(DEBUG_MODE)
@@ -223,136 +234,135 @@ class view {
                     let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, this.player.angle)/2)
-                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
+                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) {}
+                    else {
+                        let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight / 2
+                        if (drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
-                    let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
-                    if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
+                        const drawDist = drawEnd - drawStart
 
-                    const drawDist = drawEnd - drawStart
-
-                    //get the next block
-                    let nextFloorHasBeenDrawnAsATexture = false;
-                    let nextCeilingHasBeenDrawnAsATexture = false;
-                    let nextBlockFloorColour = null
-                    let nextBlockCeilingColour = null
-                    let nextBlockLightColour = null
-                    for(let k = j-1; k >=0; k-- ){
-                        if(ray.blocks[k].block instanceof Block){
-                            nextBlockFloorColour = ray.blocks[k].block.getFloorColour()
-                            nextBlockCeilingColour = ray.blocks[k].block.getCeilingColour()
-                            nextBlockLightColour = this.world.getLightColour(ray.blocks[k].mapX,ray.blocks[k].mapY)
-                            nextFloorHasBeenDrawnAsATexture = (drawnFloors[ray.blocks[k].mapY] && drawnFloors[ray.blocks[k].mapY][ray.blocks[k].mapX])
-                            nextCeilingHasBeenDrawnAsATexture = (drawnCeilings[ray.blocks[k].mapY] && drawnCeilings[ray.blocks[k].mapY][ray.blocks[k].mapX])
-                            break
+                        //get the next block
+                        let nextFloorHasBeenDrawnAsATexture = false;
+                        let nextCeilingHasBeenDrawnAsATexture = false;
+                        let nextBlockFloorColour = null
+                        let nextBlockCeilingColour = null
+                        let nextBlockLightColour = null
+                        for (let k = j - 1; k >= 0; k--) {
+                            if (ray.blocks[k].block instanceof Block) {
+                                nextBlockFloorColour = ray.blocks[k].block.getFloorColour()
+                                nextBlockCeilingColour = ray.blocks[k].block.getCeilingColour()
+                                nextBlockLightColour = this.world.getLightColour(ray.blocks[k].mapX, ray.blocks[k].mapY)
+                                nextFloorHasBeenDrawnAsATexture = (drawnFloors[ray.blocks[k].mapY] && drawnFloors[ray.blocks[k].mapY][ray.blocks[k].mapX])
+                                nextCeilingHasBeenDrawnAsATexture = (drawnCeilings[ray.blocks[k].mapY] && drawnCeilings[ray.blocks[k].mapY][ray.blocks[k].mapX])
+                                break
+                            }
                         }
-                    }
-                    //check that current light level and next one are equal
-                    let noLightColourDiff = arraysEqual(this.world.getLightColour(useful.mapX,useful.mapY) , nextBlockLightColour)
+                        //check that current light level and next one are equal
+                        let noLightColourDiff = arraysEqual(this.world.getLightColour(useful.mapX, useful.mapY), nextBlockLightColour)
 
-                    //DRAW THE FLOOR BLOCK
-                    //draw debug grid
-                    if (DEBUG_MODE) {
                         //DRAW THE FLOOR BLOCK
-                        //activate skip draw, don't skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        if(!skipDrawFloor && !block.isWall() && noLightColourDiff && block.isFloor() && block.getFloorColour() === nextBlockFloorColour && j!==0 && !floorHasBeenDrawnAsATexture && !nextFloorHasBeenDrawnAsATexture){
-                            skipDrawFloorLine =drawStart
-                            skipDrawFloor = true
-                            skipDrawFloorCount += drawDist;
-                            skipDrawFloorColour = block.getFloorColour()
+                        //draw debug grid
+                        if (DEBUG_MODE) {
+                            //DRAW THE FLOOR BLOCK
+                            //activate skip draw, don't skip when j == 0, or when the next block is not a floor, so we don't get missed draws
+                            if (!skipDrawFloor && !block.isWall() && noLightColourDiff && block.isFloor() && block.getFloorColour() === nextBlockFloorColour && j !== 0 && !floorHasBeenDrawnAsATexture && !nextFloorHasBeenDrawnAsATexture) {
+                                skipDrawFloorLine = drawStart
+                                skipDrawFloor = true
+                                skipDrawFloorCount += drawDist;
+                                skipDrawFloorColour = block.getFloorColour()
 
-                        }
-                        //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        //stop when current block is a wall (eg glass) so we dont overdraw the block
-                        else if(skipDrawFloor && !block.isWall() && noLightColourDiff && j!==0 && block.isFloor() && block.getFloorColour() === skipDrawFloorColour && !floorHasBeenDrawnAsATexture){
-                            skipDrawFloorCount += drawDist;
-                        }
-                        //end skipDraw
-                        else {
-                            //draw skipped lines
-                            if(skipDrawFloor){
-                                skipDrawFloor = false
-                                    this.context.strokeStyle = 'blue';
-                                    this.context.strokeRect(drawHorizStart, skipDrawFloorLine, drawWidth,  drawStart - skipDrawFloorLine+1);
-                                skipDrawFloorCount =0;
                             }
-                            //draw tile
-                            if (block.isFloor() && !floorHasBeenDrawnAsATexture) {
-                                this.context.strokeStyle = 'yellow';
-                                this.context.strokeRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
-                            }
-
-
-                        }
-                    }
-                    //otherwise, draw floor regularly
-                    else {
-                        //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
-                        if (!skipDrawFloor && !block.isWall() && noLightColourDiff && block.isFloor() && block.getFloorColour() === nextBlockFloorColour && j!==0 && !floorHasBeenDrawnAsATexture && !nextFloorHasBeenDrawnAsATexture) {
-                            skipDrawFloorLine = drawStart
-                            skipDrawFloor = true
-                            skipDrawFloorCount += drawDist;
-                            skipDrawFloorColour = block.getFloorColour()
-
-                        }
-                        //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
+                                //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
                             //stop when current block is a wall (eg glass) so we dont overdraw the block
-                        else if (skipDrawFloor && !block.isWall() && noLightColourDiff && j!==0 && block.isFloor() && block.getFloorColour() === skipDrawFloorColour && !floorHasBeenDrawnAsATexture) {
-                            skipDrawFloorCount += drawDist;
+                            else if (skipDrawFloor && !block.isWall() && noLightColourDiff && j !== 0 && block.isFloor() && block.getFloorColour() === skipDrawFloorColour && !floorHasBeenDrawnAsATexture) {
+                                skipDrawFloorCount += drawDist;
+                            }
+                            //end skipDraw
+                            else {
+                                //draw skipped lines
+                                if (skipDrawFloor) {
+                                    skipDrawFloor = false
+                                    this.context.strokeStyle = 'blue';
+                                    this.context.strokeRect(drawHorizStart, skipDrawFloorLine, drawWidth, drawStart - skipDrawFloorLine + 1);
+                                    skipDrawFloorCount = 0;
+                                }
+                                //draw tile
+                                if (block.isFloor() && !floorHasBeenDrawnAsATexture) {
+                                    this.context.strokeStyle = 'yellow';
+                                    this.context.strokeRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
+                                }
+
+
+                            }
+                        }
+                        //otherwise, draw floor regularly
+                        else {
+                            //activate skip draw, dont skip when j == 0, or when the next block is not a floor, so we don't get missed draws
+                            if (!skipDrawFloor && !block.isWall() && noLightColourDiff && block.isFloor() && block.getFloorColour() === nextBlockFloorColour && j !== 0 && !floorHasBeenDrawnAsATexture && !nextFloorHasBeenDrawnAsATexture) {
+                                skipDrawFloorLine = drawStart
+                                skipDrawFloor = true
+                                skipDrawFloorCount += drawDist;
+                                skipDrawFloorColour = block.getFloorColour()
+
+                            }
+                                //continueSkipDraw, stop when j == 0, or when the next block is not a floor, so we don't get missed draws
+                            //stop when current block is a wall (eg glass) so we dont overdraw the block
+                            else if (skipDrawFloor && !block.isWall() && noLightColourDiff && j !== 0 && block.isFloor() && block.getFloorColour() === skipDrawFloorColour && !floorHasBeenDrawnAsATexture) {
+                                skipDrawFloorCount += drawDist;
+                            }
+                            //end skipDraw
+                            else {
+                                //draw skipped lines
+                                if (skipDrawFloor) {
+                                    skipDrawFloor = false
+                                    this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(skipDrawFloorColour, this.world.getLightColour(useful.mapX, useful.mapY)));
+                                    this.context.fillRect(drawHorizStart, skipDrawFloorLine, drawWidth, drawStart - skipDrawFloorLine + 1);
+                                    skipDrawFloorCount = 0;
+                                }
+                                //draw large tile
+                                if (block.isFloor() && !floorHasBeenDrawnAsATexture) {
+                                    this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.getFloorColour(), this.world.getLightColour(useful.mapX, useful.mapY)));
+                                    this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
+                                }
+                            }
+                        }
+
+
+                        //DRAW THE CEILING BLOCK
+                        //activate skip draw, dont skip when j == 0, so we don't get missed draws
+                        if (!skipDrawCeiling && !block.isWall() && block.isCeiling() && noLightColourDiff && block.getCeilingColour() === nextBlockCeilingColour && j !== 0 && !ceilingHasBeenDrawnAsATexture && !nextCeilingHasBeenDrawnAsATexture) {
+                            skipDrawCeilingLine = drawStart
+                            skipDrawCeiling = true
+                            skipDrawCeilingCount += Math.abs(drawDist);
+                            skipDrawCeilingColour = block.getCeilingColour()
+
+                        }
+                            //continueSkipDraw, stop when j == 0, so we don't get missed draws
+                        //stop when current block is a wall (eg glass) so we dont overdraw the block
+                        else if (skipDrawCeiling && !block.isWall() && j !== 0 && block.isCeiling() && noLightColourDiff && block.getCeilingColour() === skipDrawCeilingColour && !ceilingHasBeenDrawnAsATexture) {
+                            skipDrawCeilingCount += Math.abs(drawDist);
                         }
                         //end skipDraw
                         else {
                             //draw skipped lines
-                            if (skipDrawFloor) {
-                                skipDrawFloor = false
-                                    this.context.fillStyle = Light.colourToRGBA( Light.applyLightColourToBlock(skipDrawFloorColour,this.world.getLightColour(useful.mapX,useful.mapY)));
-                                    this.context.fillRect(drawHorizStart, skipDrawFloorLine, drawWidth, drawStart - skipDrawFloorLine + 1);
-                                skipDrawFloorCount = 0;
+                            if (skipDrawCeiling) {
+                                let ceilingStart = this.SCREEN_HEIGHT - skipDrawCeilingLine - skipDrawCeilingCount
+                                let drawDist = skipDrawCeilingCount
+                                skipDrawCeiling = false
+
+                                this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(skipDrawCeilingColour, this.world.getLightColour(useful.mapX, useful.mapY)));
+                                this.context.fillRect(drawHorizStart, ceilingStart, drawWidth, drawDist + 1);
+
+                                skipDrawCeilingCount = 0;
                             }
-                            //draw large tile
-                            if (block.isFloor() && !floorHasBeenDrawnAsATexture) {
-                                this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.getFloorColour(),this.world.getLightColour(useful.mapX,useful.mapY)));
-                                this.context.fillRect(drawHorizStart, drawStart, drawWidth, drawDist + 1);
+                            if (block.isCeiling() && !ceilingHasBeenDrawnAsATexture) {
+                                this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.getCeilingColour(), this.world.getLightColour(useful.mapX, useful.mapY)))
+                                this.context.fillRect(drawHorizStart, this.SCREEN_HEIGHT - drawStart - drawDist, drawWidth, drawDist + 1);
                             }
                         }
+
+                        previousBlock = useful
                     }
-
-
-
-
-                    //DRAW THE CEILING BLOCK
-                    //activate skip draw, dont skip when j == 0, so we don't get missed draws
-                    if(!skipDrawCeiling && !block.isWall() && block.isCeiling() && noLightColourDiff && block.getCeilingColour() ===nextBlockCeilingColour && j!==0 && !ceilingHasBeenDrawnAsATexture && !nextCeilingHasBeenDrawnAsATexture){
-                        skipDrawCeilingLine = drawStart
-                        skipDrawCeiling = true
-                        skipDrawCeilingCount += Math.abs(drawDist);
-                        skipDrawCeilingColour = block.getCeilingColour()
-
-                    }
-                    //continueSkipDraw, stop when j == 0, so we don't get missed draws
-                    //stop when current block is a wall (eg glass) so we dont overdraw the block
-                    else if(skipDrawCeiling && !block.isWall() && j!==0 && block.isCeiling() && noLightColourDiff && block.getCeilingColour() === skipDrawCeilingColour && !ceilingHasBeenDrawnAsATexture){
-                        skipDrawCeilingCount += Math.abs(drawDist);
-                    }
-                    //end skipDraw
-                    else {
-                        //draw skipped lines
-                        if(skipDrawCeiling){
-                            let ceilingStart = this.SCREEN_HEIGHT - skipDrawCeilingLine -skipDrawCeilingCount
-                            let drawDist = skipDrawCeilingCount
-                            skipDrawCeiling = false
-
-                            this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(skipDrawCeilingColour,this.world.getLightColour(useful.mapX,useful.mapY)));
-                            this.context.fillRect(drawHorizStart, ceilingStart, drawWidth,  drawDist+1);
-
-                            skipDrawCeilingCount =0;
-                        }
-                        if(block.isCeiling() && !ceilingHasBeenDrawnAsATexture) {
-                            this.context.fillStyle = Light.colourToRGBA(Light.applyLightColourToBlock(block.getCeilingColour(),this.world.getLightColour(useful.mapX,useful.mapY)))
-                            this.context.fillRect(drawHorizStart, this.SCREEN_HEIGHT - drawStart - drawDist, drawWidth, drawDist + 1);
-                        }
-                    }
-
-                    previousBlock = useful
                 }
                 if(block.isWall())
                     this.drawWall(ray, i, useful)
