@@ -156,8 +156,6 @@ class view {
 
                         //draw floors
                         this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true,lightValue);
-                        if(DEBUG_MODE)
-                        this.debugDrawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true);
                         if (!drawnFloors[useful.mapY]) {
                             drawnFloors[useful.mapY] = []
                         }
@@ -177,8 +175,7 @@ class view {
 
                         //draw ceilings
                         this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false,lightValue);
-                        if(DEBUG_MODE)
-                        this.debugDrawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false);
+
                         if (!drawnCeilings[useful.mapY]) {
                             drawnCeilings[useful.mapY] = []
                         }
@@ -662,102 +659,6 @@ class view {
     }
 
     /**
-     * Function that draws either a ceiling or floor on the screen, for the given map coords, in DEBUG colours
-     * relative to the players view
-     * @param MapY block y coord in map array
-     * @param MapX block x coord in map array
-     * @param floor (true) if drawing a floor, false if drawing a ceiling
-     */
-    debugDrawATexturedFloorOrCeiling(MapY,MapX,floor){
-
-        const ctx = this.context;
-        ctx.save()
-        const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
-        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
-        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY,floor)
-        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1,floor)
-
-        const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
-        const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
-        const TR_BlockScreenCord_Is_Valid = this.validateScreenCord(TR_BlockScreenCord,floor);
-        const BR_BlockScreenCord_Is_Valid = this.validateScreenCord(BR_BlockScreenCord,floor);
-
-
-        const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
-        const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
-
-        // if(valid) return
-        // if(!validred  && !validblue) {
-        //     console.log("invalid draw vred: " +validred + " vblue: " +validred  )
-        //     console.log("x: "+MapX + " y: "+MapY)
-        //     console.log("player x: "+player.x / CELL_SIZE + " player y: "+player.y / CELL_SIZE)
-        //     console.log("TL i " + TL_BlockScreenCord.i +" j " + TL_BlockScreenCord.j + " angle " + TL_BlockScreenCord.angle + " distance "+ TL_BlockScreenCord.distance)
-        //     console.log("BL i " + BL_BlockScreenCord.i +" j " + BL_BlockScreenCord.j + " angle " + BL_BlockScreenCord.angle + " distance "+ BL_BlockScreenCord.distance)
-        //     console.log("TR i " + TR_BlockScreenCord.i +" j " + TR_BlockScreenCord.j + " angle " + TR_BlockScreenCord.angle + " distance "+ TR_BlockScreenCord.distance)
-        //     console.log("BR i " + BR_BlockScreenCord.i +" j " + BR_BlockScreenCord.j + " angle " + BR_BlockScreenCord.angle + " distance "+ BR_BlockScreenCord.distance)
-        //     console.log("###########\n")
-        // }
-
-        //triangle
-
-
-        if(TL_BlockScreenCord_Is_Valid &&
-            BL_BlockScreenCord_Is_Valid &&
-            TR_BlockScreenCord_Is_Valid) {
-            ctx.beginPath();
-            ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.closePath();
-            ctx.fillStyle = "blue"; //both are good
-            if(!validred) ctx.fillStyle = "darkblue" // red cant be drawn blue can
-            ctx.fill();
-        }
-        if(TR_BlockScreenCord_Is_Valid &&
-            BL_BlockScreenCord_Is_Valid &&
-            BR_BlockScreenCord_Is_Valid) {
-            ctx.beginPath();
-            ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-            ctx.closePath();
-            ctx.fillStyle = "red"; //both are good
-            if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
-            ctx.fill();
-        }
-        if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
-            if(TR_BlockScreenCord_Is_Valid){
-               ctx.beginPath();
-                ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-                ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-
-
-                ctx.closePath();
-                ctx.fillStyle = "yellow";
-                ctx.fill();
-
-            }
-            else if(BL_BlockScreenCord_Is_Valid){
-                ctx.beginPath();
-                ctx.moveTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-                ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
-
-
-                ctx.closePath();
-                ctx.fillStyle = "orange";
-                ctx.fill();
-
-            }
-
-
-        }
-
-        ctx.restore();
-    }
-
-    /**
      * Function that draws either a ceiling or floor on the screen, for the given map coords,
      * relative to the players view
      * @param MapY block y coord in map array
@@ -791,57 +692,119 @@ class view {
         if(TL_BlockScreenCord_Is_Valid &&
             BL_BlockScreenCord_Is_Valid &&
             TR_BlockScreenCord_Is_Valid) {
+            if(DEBUG_MODE){
+                ctx.beginPath();
+                ctx.moveTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.closePath();
+                ctx.fillStyle = "blue"; //both are good
+                if(!validred) ctx.fillStyle = "darkblue" // red cant be drawn blue can
+                ctx.fill();
+            }
+            else {
 
-            const s0 = {x:0,y:0}
-            const s1 = {x:image.width,y:0}
-            const s2 =  {x:0,y:image.height}
-            const srcTri = [s0, s1, s2];
-            let dstTri = [{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}, {x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}];
-            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+                const s0 = {x: 0, y: 0}
+                const s1 = {x: image.width, y: 0}
+                const s2 = {x: 0, y: image.height}
+                const srcTri = [s0, s1, s2];
+                let dstTri = [{x: TL_BlockScreenCord.i, y: TL_BlockScreenCord.j}, {
+                    x: TR_BlockScreenCord.i,
+                    y: TR_BlockScreenCord.j
+                }, {x: BL_BlockScreenCord.i, y: BL_BlockScreenCord.j}];
+                dstTri = this.nudgeTriangleOutward(dstTri, distance)
 
-            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
-            if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
-
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
+            }
 
         }
         if(TR_BlockScreenCord_Is_Valid &&
             BL_BlockScreenCord_Is_Valid &&
             BR_BlockScreenCord_Is_Valid) {
+            if(DEBUG_MODE){
+                ctx.beginPath();
+                ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                ctx.closePath();
+                ctx.fillStyle = "red"; //both are good
+                if(!validblue) ctx.fillStyle = "darkred" //blue cant be drawn red can
+                ctx.fill();
+            }
+            else {
+                const s0 = {x: image.width, y: image.height}
+                const s1 = {x: 0, y: image.height}
+                const s2 = {x: image.width, y: 0}
+                const srcTri = [s0, s1, s2];
+                let dstTri = [{x: BR_BlockScreenCord.i, y: BR_BlockScreenCord.j}, {
+                    x: BL_BlockScreenCord.i,
+                    y: BL_BlockScreenCord.j
+                }, {x: TR_BlockScreenCord.i, y: TR_BlockScreenCord.j}];
+                dstTri = this.nudgeTriangleOutward(dstTri, distance)
 
-            const s0 = {x:image.width,y:image.height}
-            const s1 = {x:0,y:image.height}
-            const s2 =  {x:image.width,y:0}
-            const srcTri = [s0, s1, s2];
-            let dstTri = [{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}];
-            dstTri = this.nudgeTriangleOutward(dstTri,distance)
-
-            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
-            if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
+            }
         }
 
         if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
             if(TR_BlockScreenCord_Is_Valid){
-                const s0 = {x:image.width,y:0}
-                const s1 = {x:0,y:0}
-                const s2 = {x:image.width,y:image.height}
-                const srcTri = [s0, s1, s2];
-                let dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
-                dstTri = this.nudgeTriangleOutward(dstTri,distance)
+                if(DEBUG_MODE){
+                    ctx.beginPath();
+                    ctx.moveTo(TR_BlockScreenCord.i, TR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                    ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                    ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
 
-                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
-                if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+
+                    ctx.closePath();
+                    ctx.fillStyle = "yellow";
+                    ctx.fill();
+
+                }
+                else {
+                    const s0 = {x: image.width, y: 0}
+                    const s1 = {x: 0, y: 0}
+                    const s2 = {x: image.width, y: image.height}
+                    const srcTri = [s0, s1, s2];
+                    let dstTri = [{x: TR_BlockScreenCord.i, y: TR_BlockScreenCord.j}, {
+                        x: TL_BlockScreenCord.i,
+                        y: TL_BlockScreenCord.j
+                    }, {x: BR_BlockScreenCord.i, y: BR_BlockScreenCord.j}];
+                    dstTri = this.nudgeTriangleOutward(dstTri, distance)
+
+                    this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                    if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
+                }
 
             }
             else if(BL_BlockScreenCord_Is_Valid){
-                const s0 = {x:0,y:image.height}
-                const s1 = {x:image.width,y:image.height}
-                const s2 = {x:0,y:0}
-                const srcTri = [s0, s1, s2];
-                let dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
-                dstTri = this.nudgeTriangleOutward(dstTri,distance)
+                if(DEBUG_MODE){
+                    ctx.beginPath();
+                    ctx.moveTo(BL_BlockScreenCord.i, BL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                    ctx.lineTo(BR_BlockScreenCord.i, BR_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
+                    ctx.lineTo(TL_BlockScreenCord.i, TL_BlockScreenCord.j);// DRAWING ON SCREEN COORDS
 
-                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
-                if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
+
+                    ctx.closePath();
+                    ctx.fillStyle = "orange";
+                    ctx.fill();
+
+                }
+                else {
+                    const s0 = {x: 0, y: image.height}
+                    const s1 = {x: image.width, y: image.height}
+                    const s2 = {x: 0, y: 0}
+                    const srcTri = [s0, s1, s2];
+                    let dstTri = [{x: BL_BlockScreenCord.i, y: BL_BlockScreenCord.j}, {
+                        x: BR_BlockScreenCord.i,
+                        y: BR_BlockScreenCord.j
+                    }, {x: TL_BlockScreenCord.i, y: TL_BlockScreenCord.j}];
+                    dstTri = this.nudgeTriangleOutward(dstTri, distance)
+
+                    this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                    if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
+                }
             }
         }
         ctx.restore();
