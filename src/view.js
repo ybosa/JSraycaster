@@ -147,7 +147,7 @@ class view {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch
                     if (block.isFloor()){
-                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (useful.light)? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
 
                         //this is a correction for non-transparent walls, the floor underneath filing the gap btw wall, and prev blocks floor needs to use prev blocks light
                         if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
@@ -167,7 +167,7 @@ class view {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch
                     if (block.isCeiling()){
-                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (useful.light)? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
                         //this is a correction for non-transparent walls, the ceiling underneath filing the gap btw wall, and prev blocks ceiling needs to use prev blocks light
                         if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
                             lightValue = 'rgba(' + previousBlock.light[0] + ',' + previousBlock.light[1] + ',' + previousBlock.light[2] + ',' + previousBlock.light[3] + ')'
@@ -479,10 +479,6 @@ class view {
     }
 
     castRay(angle,prevAngle) {
-        return this.getCollision(angle,prevAngle); //finds ray collisions with blocks
-    }
-
-    getCollision(angle,prevAngle) {
         let right = Boolean(Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2)); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
 

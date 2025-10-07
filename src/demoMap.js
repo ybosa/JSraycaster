@@ -127,7 +127,7 @@ function generateDemoMap(world){
         wall:true,
 
         transparent:true,
-        ceiling:true,
+        ceiling:false,
         floor:true,
             ceilingImageName:"leaves.png",
             floorImageName:"gravel.png"
