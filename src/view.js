@@ -668,14 +668,14 @@ class view {
      * @param MapX block x coord in map array
      * @param floor (true) if drawing a floor, false if drawing a ceiling
      */
-    debugDrawATexturedFloorOrCeiling(MapY,MapX,floor){
+    debugDrawATexturedFloorOrCeilingHelper(MapY,MapX,floor,size = 1){
 
         const ctx = this.context;
         ctx.save()
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
-        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
-        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY,floor)
-        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+1,MapY+1,floor)
+        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+size,floor)
+        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+size,MapY,floor)
+        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+size,MapY+size,floor)
 
         const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
         const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
@@ -757,6 +757,57 @@ class view {
         ctx.restore();
     }
 
+    debugDrawATexturedFloorOrCeiling(MapY,MapX,floor,divisions = -1,size =1){
+        if(divisions === -1){
+            const distance = this.distance(this.player.x,this.player.y,MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;
+            if(distance < 2){
+                this.debugDrawATexturedFloorOrCeiling(MapY,MapX,floor,4,1)
+            }
+            else if(distance < 4){
+                this.debugDrawATexturedFloorOrCeiling(MapY,MapX,floor,2,1)
+            }
+            else {
+                this.debugDrawATexturedFloorOrCeilingHelper(MapY,MapX,floor)
+            }
+        }
+        else if(divisions ===1 ){
+            this.debugDrawATexturedFloorOrCeilingHelper(MapY,MapX,floor,size)
+        }
+        else if(divisions > 1){
+            this.debugDrawATexturedFloorOrCeiling(MapY + size/2,MapX + size/2,floor,divisions -1 ,size/2)
+            this.debugDrawATexturedFloorOrCeiling(MapY + size/2,MapX,floor,divisions -1 ,size/2)
+            this.debugDrawATexturedFloorOrCeiling(MapY,MapX + size/2,floor,divisions -1 ,size/2)
+            this.debugDrawATexturedFloorOrCeiling(MapY,MapX,floor,divisions -1 ,size/2)
+        }
+    }
+
+    drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue,divisions = -1,size =1){
+        if(divisions === -1){
+            const distance = this.distance(this.player.x,this.player.y,MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;
+            if(distance < 2){
+                this.drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue,4,1)
+            }
+            else if(distance < 4){
+                this.drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue,2,1)
+            }
+            else {
+                this.drawATexturedFloorOrCeilingHelper(MapY,MapX,floor,lightValue,size)
+            }
+
+            this.drawALightToAFloorORCeiling(MapY,MapX,floor,lightValue)
+        }
+        else if(divisions ===1 ){
+            this.drawATexturedFloorOrCeilingHelper(MapY,MapX,floor,lightValue,size)
+        }
+        else if(divisions > 1){
+            this.drawATexturedFloorOrCeiling(MapY + size/2,MapX + size/2,floor,lightValue,divisions -1 ,size/2)
+            this.drawATexturedFloorOrCeiling(MapY + size/2,MapX,floor,lightValue,divisions -1 ,size/2)
+            this.drawATexturedFloorOrCeiling(MapY,MapX + size/2,floor,lightValue,divisions -1 ,size/2)
+            this.drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue,divisions -1 ,size/2)
+        }
+
+    }
+
     /**
      * Function that draws either a ceiling or floor on the screen, for the given map coords,
      * relative to the players view
@@ -764,10 +815,95 @@ class view {
      * @param MapX block x coord in map array
      * @param floor (true) if drawing a floor, false if drawing a ceiling
      */
-    drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue){
+    drawATexturedFloorOrCeilingHelper(MapY,MapX,floor,lightValue,size=1){
         const ctx = this.context;
         ctx.save();
         const distance = this.distance(this.player.x,this.player.y,MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;
+
+        const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
+        const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+size,floor)
+        const TR_BlockScreenCord =  this.worldCordToScreenCord(MapX+size,MapY,floor)
+        const BR_BlockScreenCord =  this.worldCordToScreenCord(MapX+size,MapY+size,floor)
+
+        const TL_BlockScreenCord_Is_Valid = this.validateScreenCord(TL_BlockScreenCord,floor);
+        const BL_BlockScreenCord_Is_Valid = this.validateScreenCord(BL_BlockScreenCord,floor);
+        const TR_BlockScreenCord_Is_Valid = this.validateScreenCord(TR_BlockScreenCord,floor);
+        const BR_BlockScreenCord_Is_Valid = this.validateScreenCord(BR_BlockScreenCord,floor);
+
+
+        const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
+        const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
+
+        const UnFloorMapX = MapX, UnFloorMapY = MapY;
+        MapY = Math.floor(MapY)
+        MapX = Math.floor(MapX)
+
+        //triangle
+        const block = this.map[MapY][MapX]
+        const image = (floor) ? getImage(block.getFloorImageName() ): getImage(block.getCeilingImageName());
+
+        const xSample = (UnFloorMapX - Math.floor(UnFloorMapX))*image.width
+        const ySample = (UnFloorMapY - Math.floor(UnFloorMapY))*image.height
+
+        if(TL_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            TR_BlockScreenCord_Is_Valid) {
+
+            const s0 = {x:xSample,y:ySample}
+            const s1 = {x:xSample + size * image.width,y:ySample}
+            const s2 =  {x:xSample,y:ySample + size * image.height}
+            const srcTri = [s0, s1, s2];
+            let dstTri = [{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}, {x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}];
+            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+
+
+        }
+        if(TR_BlockScreenCord_Is_Valid &&
+            BL_BlockScreenCord_Is_Valid &&
+            BR_BlockScreenCord_Is_Valid) {
+
+            const s0 = {x:xSample + size * image.width,y:ySample + size * image.height}
+            const s1 = {x:xSample,y:ySample + size* image.height}
+            const s2 =  {x:xSample + size * image.width,y:ySample}
+            const srcTri = [s0, s1, s2];
+            let dstTri = [{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}];
+            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+        }
+
+        if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
+            if(TR_BlockScreenCord_Is_Valid){
+                const s0 = {x:image.width,y:0}
+                const s1 = {x:0,y:0}
+                const s2 = {x:image.width,y:image.height}
+                const srcTri = [s0, s1, s2];
+                let dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
+                dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+
+            }
+            else if(BL_BlockScreenCord_Is_Valid){
+                const s0 = {x:0,y:image.height}
+                const s1 = {x:image.width,y:image.height}
+                const s2 = {x:0,y:0}
+                const srcTri = [s0, s1, s2];
+                let dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
+                dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
+                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+            }
+        }
+        ctx.restore();
+    }
+
+    drawALightToAFloorORCeiling(MapY,MapX,floor,lightValue){
+        const ctx = this.context;
+        ctx.save();
+        const distance = this.distance(this.player.x,this.player.y,MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;;
 
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
         const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
@@ -783,23 +919,22 @@ class view {
         const validblue = TL_BlockScreenCord_Is_Valid && BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid; //blue polygon represents top let corner of block
         const validred = BL_BlockScreenCord_Is_Valid && TR_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid; //red polygon represents bottom right corner of block
 
+        const UnFloorMapX = MapX, UnFloorMapY = MapY;
+        MapY = Math.floor(MapY)
+        MapX = Math.floor(MapX)
 
         //triangle
         const block = this.map[MapY][MapX]
         const image = (floor) ? getImage(block.getFloorImageName() ): getImage(block.getCeilingImageName());
 
+
         if(TL_BlockScreenCord_Is_Valid &&
             BL_BlockScreenCord_Is_Valid &&
             TR_BlockScreenCord_Is_Valid) {
 
-            const s0 = {x:0,y:0}
-            const s1 = {x:image.width,y:0}
-            const s2 =  {x:0,y:image.height}
-            const srcTri = [s0, s1, s2];
             let dstTri = [{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}, {x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}];
-            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+            // dstTri = this.nudgeTriangleOutward(dstTri,distance)
 
-            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
             if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
 
 
@@ -808,39 +943,26 @@ class view {
             BL_BlockScreenCord_Is_Valid &&
             BR_BlockScreenCord_Is_Valid) {
 
-            const s0 = {x:image.width,y:image.height}
-            const s1 = {x:0,y:image.height}
-            const s2 =  {x:image.width,y:0}
-            const srcTri = [s0, s1, s2];
             let dstTri = [{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j}, {x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j}];
-            dstTri = this.nudgeTriangleOutward(dstTri,distance)
+            // dstTri = this.nudgeTriangleOutward(dstTri,distance)
 
-            this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
             if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
         }
 
         if( !validblue && !validred && TL_BlockScreenCord_Is_Valid && BR_BlockScreenCord_Is_Valid ){
             if(TR_BlockScreenCord_Is_Valid){
-                const s0 = {x:image.width,y:0}
-                const s1 = {x:0,y:0}
-                const s2 = {x:image.width,y:image.height}
-                const srcTri = [s0, s1, s2];
-                let dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
-                dstTri = this.nudgeTriangleOutward(dstTri,distance)
 
-                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                let dstTri = [{x:TR_BlockScreenCord.i,y:TR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j}];
+                // dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
                 if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
 
             }
             else if(BL_BlockScreenCord_Is_Valid){
-                const s0 = {x:0,y:image.height}
-                const s1 = {x:image.width,y:image.height}
-                const s2 = {x:0,y:0}
-                const srcTri = [s0, s1, s2];
-                let dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
-                dstTri = this.nudgeTriangleOutward(dstTri,distance)
 
-                this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+                let dstTri = [{x:BL_BlockScreenCord.i,y:BL_BlockScreenCord.j},{x:BR_BlockScreenCord.i,y:BR_BlockScreenCord.j},{x:TL_BlockScreenCord.i,y:TL_BlockScreenCord.j}];
+                // dstTri = this.nudgeTriangleOutward(dstTri,distance)
+
                 if(lightValue) this.drawSolidColourShape(ctx,lightValue,dstTri)
             }
         }
@@ -850,6 +972,7 @@ class view {
     drawSolidColourShape(ctx,colourValue,positions){
         if(!colourValue) return
         if(positions.length < 1) return;
+        ctx.save();
 
         ctx.beginPath();
         ctx.moveTo(positions[0].x, positions[0].y);// DRAWING ON SCREEN COORDS
@@ -858,8 +981,12 @@ class view {
             ctx.lineTo(positions[index].x, positions[index].y);// DRAWING ON SCREEN COORDS
         }
         ctx.closePath();
+        ctx.clip();
+
         ctx.fillStyle = colourValue;
         ctx.fill();
+        ctx.restore();
+
     }
 
     nudgeTriangleOutward(dstTri, distance) {
