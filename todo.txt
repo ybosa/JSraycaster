@@ -29,9 +29,9 @@ MILESTONE PR CLOSE BRANCH
 5.1) fix transparent tiles not rendering rear wall!
 #5.2) fix corners of transparent blocks not being rendered! (fixed in #3.5)
 
-6) fix skybox line in the north east direction
+#6) fix skybox line in the north east direction
 
-7) fix floors rendering behind abyss blocks, will need to redraw the background img, potentialy do with the floor ceiling too? (sprites)
+7) fix floors rendering behind abyss blocks, will need to redraw the background img, potentially do with the floor ceiling too? (sprites)
 7.5) reuse the background draw code to allow for textures that are based on screen position not world for weird effects! add it as a property of the blocks class.
 
 10) consolidate config

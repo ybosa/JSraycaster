@@ -625,7 +625,7 @@ class view {
             let ScreenPosX = scale * sXWDrawn
             let ScreenRemainingX = scale * sXWRemain
 
-            this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX, 0, ScreenRemainingX, this.SCREEN_HEIGHT)
+            this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX-1, 0, ScreenRemainingX+1, this.SCREEN_HEIGHT)
         }
     }
 
