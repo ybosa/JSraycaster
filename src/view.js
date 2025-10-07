@@ -145,9 +145,15 @@ class view {
 
                 if(!(drawnFloors[useful.mapY] && drawnFloors[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
                     //draw floors and ceilings, and lack thereof (as
-                    //FIXME debug entry condition to this branch, may just need to be true
+                    //FIXME debug entry condition to this branch
                     if (block.isFloor()){
-                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+
+                        //this is a correction for non-transparent walls, the floor underneath filing the gap btw wall, and prev blocks floor needs to use prev blocks light
+                        if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
+                            lightValue = 'rgba(' + previousBlock.light[0] + ',' + previousBlock.light[1] + ',' + previousBlock.light[2] + ',' + previousBlock.light[3] + ')'
+                        }
+
                         //draw floors
                         this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,true,lightValue);
                         if(DEBUG_MODE)
@@ -161,9 +167,14 @@ class view {
 
                 if(!(drawnCeilings[useful.mapY] && drawnCeilings[useful.mapY][useful.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead()) ) {
                     //draw floors and ceilings, and lack thereof (as
-                    //FIXME debug entry condition to this branch, may just need to be true
+                    //FIXME debug entry condition to this branch
                     if (block.isCeiling()){
-                        const lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        //this is a correction for non-transparent walls, the ceiling underneath filing the gap btw wall, and prev blocks ceiling needs to use prev blocks light
+                        if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
+                            lightValue = 'rgba(' + previousBlock.light[0] + ',' + previousBlock.light[1] + ',' + previousBlock.light[2] + ',' + previousBlock.light[3] + ')'
+                        }
+
                         //draw ceilings
                         this.drawATexturedFloorOrCeiling(useful.mapY, useful.mapX,false,lightValue);
                         if(DEBUG_MODE)
@@ -223,8 +234,8 @@ class view {
                     let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
                     let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, this.player.angle)/2)
-                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) return
-
+                    if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) {}
+                    else {
                     let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight/2
                     if(drawEnd > this.SCREEN_HEIGHT) drawEnd = this.SCREEN_HEIGHT
 
@@ -317,8 +328,6 @@ class view {
                     }
 
 
-
-
                     //DRAW THE CEILING BLOCK
                     //activate skip draw, dont skip when j == 0, so we don't get missed draws
                     if(!skipDrawCeiling && !block.isWall() && block.isCeiling() && noLightColourDiff && block.getCeilingColour() ===nextBlockCeilingColour && j!==0 && !ceilingHasBeenDrawnAsATexture && !nextCeilingHasBeenDrawnAsATexture){
@@ -353,6 +362,7 @@ class view {
                     }
 
                     previousBlock = useful
+                }
                 }
                 if(block.isWall())
                     this.drawWall(ray, i, useful)
