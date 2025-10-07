@@ -17,7 +17,11 @@ MILESTONE PR CLOSE BRANCH
 #3.5) fix the gap between floor tiles and wall!
 MILESTONE PR CLOSE BRANCH
 
-4) make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance. Floor lighting should only be done once!
+4) FIXME make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance. Floor lighting should only be done once!
+This is difficult as browser antialiasing requires you to insert it inside the draw affine triangle general method (subdivide the screen triangle),
+rather than a simpler break down of the floor tiles into smaller square tiles
+this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
+if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
 
 MILESTONE PR CLOSE BRANCH
 
