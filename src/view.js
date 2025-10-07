@@ -5,7 +5,7 @@ import {
     FLOOR_TEXTURED_DRAW_MAX_DIST,
     IMAGE_PATH,
     MAX_RAY_DEPTH,
-    MAX_RAYS,
+    MAX_RAYS, MIN_TRANSPARENCY_ANY_BLOCKS, MIN_TRANSPARENCY_TRANSPARENT_BLOCKS,
     MINIMAP
 } from "./config.js";
 import Block from "./block.js";
@@ -373,6 +373,8 @@ class view {
 
     drawWall(ray, i, useful) {
         let block = useful.block
+        if(block.isTransparent() && useful.totalTransparency < MIN_TRANSPARENCY_TRANSPARENT_BLOCKS) return
+
         let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
@@ -493,12 +495,12 @@ class view {
         let mapY = Math.floor(this.player.y / CELL_SIZE) //grid cell player is in y coord
 
         //step forward rays
-
+        let totalTransparency = 1;
         let distance = 0;
         let count = 0
         let blocks = [] //set of all the blocks visited by the ray
-        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,this.world.getLightColour(mapX,mapY)) //can ignore sampling value on block you are standing in, assuming its not a wall
-        while (count <= MAX_RAY_DEPTH) {
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,this.world.getLightColour(mapX,mapY),totalTransparency) //can ignore sampling value on block you are standing in, assuming its not a wall
+        while (count <= MAX_RAY_DEPTH && totalTransparency > MIN_TRANSPARENCY_ANY_BLOCKS) {
             count++;
             let vertical = sideDistX < sideDistY;
             //jump to next map square, either in x-direction, or in y-direction
@@ -528,7 +530,7 @@ class view {
                         const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
                         if(sample && sampleWidth)
                             pushBlocks(blocks, entity, mapX, mapY, this.distance(this.player.x, this.player.y, entity.x, entity.y),
-                                sample, sampleWidth,this.world.getLightColour(mapX, mapY))
+                                sample, sampleWidth,this.world.getLightColour(mapX, mapY),totalTransparency)
                     }
                 })
             }
@@ -556,17 +558,22 @@ class view {
                         light = blocks[blocks.length -1].light
 
                 }
-                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth, light)
+                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth, light,totalTransparency)
+            }
+            //adjust totalTransparency
+            if(this.map[mapY][mapX].isTransparent()){
+                totalTransparency -= this.map[mapY][mapX].getOpacity();
             }
 
             //Check if ray has hit a wall, end raycast.
             if (!this.map[mapY][mapX].isTransparent()) {
-                return {
-                    angle,
-                    blocks: blocks
-                };
+                break
             }
         }
+        return {
+            angle,
+            blocks: blocks
+        };
     }
 
     calcSample(vertical, distance, angle, mapQ,right,up) {
@@ -1081,8 +1088,8 @@ function initMissingIMG() {
     imageSet[missingImgName] = loadIMG
 }
 
-function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth,light){
-    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth,light})
+function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth,light,totalTransparency){
+    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth,light,totalTransparency})
 }
 
 function arraysEqual(a,b){

@@ -7,6 +7,7 @@ class Block {
     #drawBackgroundImgInstead = false; // terminates draw and draws the background image where the wall would be
 
     #transparent = false;//if block is transparent, ray will draw it and blocks behind
+    #opacity = 0; //used to calculate when it's time to stop drawing transparent blocks behind each-other
 
     #passable = false;// block allows entities / players to move through it
 
@@ -35,6 +36,7 @@ class Block {
     static getStaticInstance(BlockClass){return this.#staticBlockClassesMap.get(BlockClass)}
     getFloorColour(){return this.#floorColour}
     getCeilingColour(){return this.#ceilingColour}
+    getOpacity(){return this.#opacity}
 
     //get image properties
     getWallImageName(angle,time){
@@ -98,6 +100,8 @@ class Block {
 
             this.#wall =  (blockData.hasOwnProperty("wall")) ? blockData.wall : this.#wall;
             this.#wallImageName = (blockData.hasOwnProperty("wallImageName"))  ? blockData.wallImageName : this.#wallImageName;
+            this.#opacity = this.#transparent && this.#wall ? 0.25 : 0
+            this.#opacity = (blockData.hasOwnProperty("opacity")) ? blockData.opacity : this.#opacity;
 
             this.#floor = (blockData.hasOwnProperty("floor")) ? blockData.floor : this.#floor;
             this.#floorColour = (blockData.hasOwnProperty("floorColour")) ? blockData.floorColour : this.#floorColour;

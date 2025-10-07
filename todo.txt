@@ -25,7 +25,7 @@ if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
 
 MILESTONE PR CLOSE BRANCH
 
-5) set max depth for transparent textures, consider a non transparent variant after second or (N) layer?
+#5) set max depth for transparent textures, each transparent block reduces total transparency after dropping below a threshold nothing is rendered
 $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 #5.2) fix corners of transparent blocks not being rendered! (fixed in #3.5)
 

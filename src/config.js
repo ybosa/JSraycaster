@@ -18,3 +18,7 @@ export const FLOOR_TEXTURED_DRAW_MAX_DIST = 50; //how far should floor (and ceil
 export default {CELL_SIZE,GAME_TICK_RATE,SCREEN_TICK_RATE,MAX_RAYS,DEBUG_MODE,IMAGE_PATH,MAX_RAY_DEPTH,MINIMAP,FLOOR_SKIP_DRAW_THRESHOLD,FLOOR_SKIP_DRAW_MAX_DIST}
 
 export const DEBUGVARS = {DEBUG_MODE,MINIMAP, setDebugMode : (val) => {DEBUG_MODE = val}, setMinimap: (val) => {MINIMAP = val} };
+
+export const MIN_TRANSPARENCY_TRANSPARENT_BLOCKS = 0.125 //used to calculate when it's time to stop drawing transparent blocks behind each-other
+export const MIN_TRANSPARENCY_ANY_BLOCKS = -100000000000 //used to calculate when it's time to stop drawing transparent blocks behind each-other
+

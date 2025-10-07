@@ -125,7 +125,7 @@ function generateDemoMap(world){
     let leaves = new Block(
         {wallImageName:"leaves.png",
         wall:true,
-
+        opacity: 0.33,
         transparent:true,
         ceiling:false,
         floor:true,
