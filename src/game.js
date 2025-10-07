@@ -13,14 +13,22 @@ generateDemoMap(world)
 let viewer = new view(player)
 let controller = new Controller(player,viewer.canvas,viewer)
 
+const minPhysicsCalcs = 1
+let physicsCount = Math.MAX_SAFE_INTEGER
+
 function gameLoop() {
     player.movePlayer();
+    physicsCount++;
 }
 
 function displayLoop(){
-    viewer.redraw();
-    displayFPS()
-    window.requestAnimationFrame(displayLoop)
+    if(physicsCount <= minPhysicsCalcs){window.requestAnimationFrame(displayLoop) }
+    else {
+        physicsCount = 0;
+        viewer.redraw();
+        displayFPS()
+        window.requestAnimationFrame(displayLoop)
+    }
 }
 
 setInterval(gameLoop,1000/GAME_TICK_RATE);

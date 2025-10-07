@@ -364,6 +364,7 @@ class view {
                         previousBlock = useful
                     }
                 }
+                }
                 if(block.isWall())
                     this.drawWall(ray, i, useful)
 
