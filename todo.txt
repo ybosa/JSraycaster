@@ -34,9 +34,9 @@ $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 #7) fix floors rendering behind abyss blocks, will need to redraw the background img, potentially do with the floor ceiling too? (sprites)
 #7.5) reuse the background draw code to allow for textures that are based on screen position not world for weird effects! add it as a property of the blocks class.
 
-10) consolidate config
+#10) consolidate config
 
-11) fix GitHub preview not working, or replace with something else to send a link to people
+#11) fix GitHub preview not working, or replace with something else to send a link to people https://raw.githack.com/ybosa/JSraycaster/main/index.html
 
 12)refactor other classes to use getters
 
