@@ -214,7 +214,12 @@ class view {
                     this.drawSprite(ray, i, useful)
                     continue
                 }
-                if (block.isInvisible() || block.isDrawBackgroundImgInstead()) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
+                if (block.isInvisible()) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
+                if(block.isDrawBackgroundImgInstead()){
+                    const img =  (block.isUsingWallImageAsBackgroundImg() ? getImage(block.getWallImageName()) : getImage(this.world.sky))
+                    this.drawWallWithSkyboxTexture(ray, i, useful,img)
+                    continue
+                }
 
                 //draw floors and ceilings, and lack thereof (as
                 //FIXME debug entry condition to this branch, may just need to be true
@@ -361,7 +366,11 @@ class view {
                         previousBlock = useful
                     }
                 }
-                if(block.isWall())
+
+                if(block.isWall() && block.isWallImageIsScreenSpaceNotWorld()){
+                    this.drawWallWithScreenSpaceTexture(ray,i,useful)
+                }
+                else if(block.isWall())
                     this.drawWall(ray, i, useful)
 
                 previousBlock = useful
@@ -420,6 +429,78 @@ class view {
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
+            this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
+        }
+    }
+
+    drawWallWithScreenSpaceTexture(ray, i, useful) {
+        const ctx = this.context;
+        let block = useful.block
+        if(block.isTransparent() && useful.totalTransparency < MIN_TRANSPARENCY_TRANSPARENT_BLOCKS) return
+
+        let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+        let img = getImage(block.getWallImageName())
+
+
+        //fix overdrawing ray bounds
+        let drawStart = Math.floor(i *pixelWidth)
+        let nextDrawStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawStart - drawStart)
+
+
+        //draw Image
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1);
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 );
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2 );
+        ctx.lineTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2);
+        ctx.closePath();
+        ctx.clip();
+        this.context.drawImage(img,0,0,this.SCREEN_WIDTH,this.SCREEN_HEIGHT)
+        ctx.restore();
+
+
+        //draw lighting
+        if(useful.light) {
+            this.context.fillStyle = 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')';
+            this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
+        }
+
+
+        if (DEBUG_MODE && pixelWidth > 5) {
+            this.context.strokeStyle = 'magenta';
+            this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
+        }
+    }
+
+    drawWallWithSkyboxTexture(ray, i, useful,img) {
+        const ctx = this.context;
+        let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+
+        //fix overdrawing ray bounds
+        let drawStart = Math.floor(i *pixelWidth)
+        let nextDrawStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawStart - drawStart)
+
+        //draw Image
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1);
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 );
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2 );
+        ctx.lineTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2);
+        ctx.closePath();
+        ctx.clip();
+        this.drawSkybox(img,drawStart,this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 ,drawWidth,wallHeight+2)
+        ctx.restore();
+
+        if (DEBUG_MODE && pixelWidth > 5) {
+            this.context.strokeStyle = 'pink';
             this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
         }
     }
@@ -616,10 +697,10 @@ class view {
         let rotation = this.player.angle / (2 * Math.PI) - Math.floor(this.player.angle / (2 * Math.PI)) //btw 0 and 1
 
         let sXStart = rotation * img.width //[px]
-        let sXWidth = FOV / (2 * Math.PI) * img.width          //[px]
+        let sXWidth = FOV / (2 * Math.PI) * img.width //[px]
         this.context.drawImage(img, sXStart, 0, sXWidth, img.height, 0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT)
 
-        //reached right end of image
+        //reached the right end of the image
         if (sXStart + sXWidth > img.width) {
             let sXWDrawn = (img.width - sXStart)
             let sXWRemain = sXWidth - sXWDrawn

@@ -238,6 +238,19 @@ function generateDemoMap(world){
 
     //garden entry
     fillAltArea(map,stoneFloorRoofW,stoneFloorRoofB,13,13,21,21)
+
+    const debug = new Block({
+        wall:true,
+        floor:false,
+        ceiling:false,
+        transparent:true,
+        opacity:1,
+        wallImageName:"missing.png",
+        wallImageIsScreenSpaceNotWorld:true
+    })
+    map[3][3] = debug
+    map[3][4] = debug
+    map[3][2] = debug
 }
 
 function drawRow(map,block,row,colStart,colStop){

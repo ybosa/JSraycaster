@@ -5,6 +5,7 @@ class Block {
 
     #invisible = false; //invisible blocks are not drawn FIXME not handled correctly
     #drawBackgroundImgInstead = false; // terminates draw and draws the background image where the wall would be
+    #useWallImageAsBackgroundImg = false; //use a different skybox texture
 
     #transparent = false;//if block is transparent, ray will draw it and blocks behind
     #opacity = 0; //used to calculate when it's time to stop drawing transparent blocks behind each-other
@@ -14,6 +15,7 @@ class Block {
 
     #wall = true; //has a wall to draw
     #wallImageName = "missing.png"; //debug texture
+    #wallImageIsScreenSpaceNotWorld = false; //allows for weird effect where texture dosent move as you do
     #floor = false; //has a floor to draw
     #floorColour = "[150,0,150,1]"  //approx average of debug texture colour
     #floorImageName = "missing.png"; //debug texture
@@ -27,6 +29,8 @@ class Block {
     isInvisible() {return this.#invisible}
     isTransparent(){ return this.#transparent;}
     isPassable(){ return this.#passable}
+    isWallImageIsScreenSpaceNotWorld(){ return this.#wallImageIsScreenSpaceNotWorld;}
+    isUsingWallImageAsBackgroundImg(){ return this.#useWallImageAsBackgroundImg;}
     isWall(){ return this.#wall;}
     isFloor() { return this.#floor}
     isCeiling(){ return this.#ceiling}
@@ -99,6 +103,8 @@ class Block {
             this.#passable = (blockData.hasOwnProperty("passable")) ? blockData.passable : this.#passable;
 
             this.#wall =  (blockData.hasOwnProperty("wall")) ? blockData.wall : this.#wall;
+            this.#wallImageIsScreenSpaceNotWorld =  (blockData.hasOwnProperty("wallImageIsScreenSpaceNotWorld")) ? blockData.wallImageIsScreenSpaceNotWorld : this.#wallImageIsScreenSpaceNotWorld;
+            this.#useWallImageAsBackgroundImg =  (blockData.hasOwnProperty("useWallImageAsBackgroundImg")) ? blockData.useWallImageAsBackgroundImg : this.#useWallImageAsBackgroundImg;
             this.#wallImageName = (blockData.hasOwnProperty("wallImageName"))  ? blockData.wallImageName : this.#wallImageName;
             this.#opacity = this.#transparent && this.#wall ? 0.25 : 0
             this.#opacity = (blockData.hasOwnProperty("opacity")) ? blockData.opacity : this.#opacity;
