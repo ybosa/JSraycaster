@@ -47,6 +47,7 @@ class Glass extends oldBlock{
             wall : true,
             passable : false,
             transparent : true,
+            opacity: 0.125,
             wallImageName : "glass.png",
             ceilingColour : [0,0,0,1],
             floorColour : [0,0,255,1]

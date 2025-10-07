@@ -17,7 +17,7 @@ MILESTONE PR CLOSE BRANCH
 #3.5) fix the gap between floor tiles and wall!
 MILESTONE PR CLOSE BRANCH
 
-4) FIXME make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance. Floor lighting should only be done once!
+$4) FIXME make floor texture recursive subdivision, to reduce the distortion up close. N divisions based on distance. Floor lighting should only be done once!
 This is difficult as browser antialiasing requires you to insert it inside the draw affine triangle general method (subdivide the screen triangle),
 rather than a simpler break down of the floor tiles into smaller square tiles
 this.drawAffineTriangleGeneral(ctx, image, srcTri, dstTri)
@@ -25,14 +25,14 @@ if (lightValue) this.drawSolidColourShape(ctx, lightValue, dstTri)
 
 MILESTONE PR CLOSE BRANCH
 
-5) set max depth for transparent textures, consider a non transparent variant after second or (N) layer?
-5.1) fix transparent tiles not rendering rear wall!
+#5) set max depth for transparent textures, each transparent block reduces total transparency after dropping below a threshold nothing is rendered
+$5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 #5.2) fix corners of transparent blocks not being rendered! (fixed in #3.5)
 
-6) fix skybox line in the north east direction
+#6) fix skybox line in the north east direction
 
-7) fix floors rendering behind abyss blocks, will need to redraw the background img, potentialy do with the floor ceiling too? (sprites)
-7.5) reuse the background draw code to allow for textures that are based on screen position not world for weird effects! add it as a property of the blocks class.
+#7) fix floors rendering behind abyss blocks, will need to redraw the background img, potentially do with the floor ceiling too? (sprites)
+#7.5) reuse the background draw code to allow for textures that are based on screen position not world for weird effects! add it as a property of the blocks class.
 
 10) consolidate config
 
@@ -43,11 +43,11 @@ MILESTONE PR CLOSE BRANCH
 20) better image loading, not lazy method,
 21) game shouldn't crash if an img load fails!
 
-22) generate floor and ceiling colour on the fly if non provided, based on image colour
+22) generate floor and ceiling colour on the fly if not provided, based on image colour
 23) consider generating lower res textures (mipmapping?) from provided texture for far away textures. Improve performance? or just to remove jitter
 24) allow texturing blocks based on direction and time!
 25) fix the floors drawing underneath walls (issue 5.2) code so that it generates a new image using the bottom edge of the texture (or rotates img to align with floor base).
-    Currently, you can have a colour mismatch if top of texture or sides is different from the bottom!
+    Currently, you can have a colour mismatch if the top of texture or sides is different from the bottom!
 
 30) custom ray collision math => allows for complex wall shapes
 

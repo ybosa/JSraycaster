@@ -5,7 +5,7 @@ import {
     FLOOR_TEXTURED_DRAW_MAX_DIST,
     IMAGE_PATH,
     MAX_RAY_DEPTH,
-    MAX_RAYS,
+    MAX_RAYS, MIN_TRANSPARENCY_ANY_BLOCKS, MIN_TRANSPARENCY_TRANSPARENT_BLOCKS,
     MINIMAP
 } from "./config.js";
 import Block from "./block.js";
@@ -147,7 +147,7 @@ class view {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch
                     if (block.isFloor()){
-                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (useful.light)? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
 
                         //this is a correction for non-transparent walls, the floor underneath filing the gap btw wall, and prev blocks floor needs to use prev blocks light
                         if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
@@ -167,7 +167,7 @@ class view {
                     //draw floors and ceilings, and lack thereof (as
                     //FIXME debug entry condition to this branch
                     if (block.isCeiling()){
-                        let lightValue = (this.world.getLightColour(useful.mapX,useful.mapY))? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
+                        let lightValue = (useful.light)? 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')' : null;
                         //this is a correction for non-transparent walls, the ceiling underneath filing the gap btw wall, and prev blocks ceiling needs to use prev blocks light
                         if(block.isWall() && !(block.isTransparent() || block.isInvisible() || block.isDrawBackgroundImgInstead()) && previousBlock.light) {
                             lightValue = 'rgba(' + previousBlock.light[0] + ',' + previousBlock.light[1] + ',' + previousBlock.light[2] + ',' + previousBlock.light[3] + ')'
@@ -214,7 +214,12 @@ class view {
                     this.drawSprite(ray, i, useful)
                     continue
                 }
-                if (block.isInvisible() || block.isDrawBackgroundImgInstead()) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
+                if (block.isInvisible()) continue //fixme cant call invisible function anymore as im using classes now - useful.block is a bad name, includes sprites!
+                if(block.isDrawBackgroundImgInstead()){
+                    const img =  (block.isUsingWallImageAsBackgroundImg() ? getImage(block.getWallImageName()) : getImage(this.world.sky))
+                    this.drawWallWithSkyboxTexture(ray, i, useful,img)
+                    continue
+                }
 
                 //draw floors and ceilings, and lack thereof (as
                 //FIXME debug entry condition to this branch, may just need to be true
@@ -361,7 +366,11 @@ class view {
                         previousBlock = useful
                     }
                 }
-                if(block.isWall())
+
+                if(block.isWall() && block.isWallImageIsScreenSpaceNotWorld()){
+                    this.drawWallWithScreenSpaceTexture(ray,i,useful)
+                }
+                else if(block.isWall())
                     this.drawWall(ray, i, useful)
 
                 previousBlock = useful
@@ -373,6 +382,8 @@ class view {
 
     drawWall(ray, i, useful) {
         let block = useful.block
+        if(block.isTransparent() && useful.totalTransparency < MIN_TRANSPARENCY_TRANSPARENT_BLOCKS) return
+
         let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
@@ -418,6 +429,78 @@ class view {
 
         if (DEBUG_MODE && pixelWidth > 5) {
             this.context.strokeStyle = 'red';
+            this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
+        }
+    }
+
+    drawWallWithScreenSpaceTexture(ray, i, useful) {
+        const ctx = this.context;
+        let block = useful.block
+        if(block.isTransparent() && useful.totalTransparency < MIN_TRANSPARENCY_TRANSPARENT_BLOCKS) return
+
+        let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+        let img = getImage(block.getWallImageName())
+
+
+        //fix overdrawing ray bounds
+        let drawStart = Math.floor(i *pixelWidth)
+        let nextDrawStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawStart - drawStart)
+
+
+        //draw Image
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1);
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 );
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2 );
+        ctx.lineTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2);
+        ctx.closePath();
+        ctx.clip();
+        this.context.drawImage(img,0,0,this.SCREEN_WIDTH,this.SCREEN_HEIGHT)
+        ctx.restore();
+
+
+        //draw lighting
+        if(useful.light) {
+            this.context.fillStyle = 'rgba('+useful.light[0]+','+useful.light[1]+','+useful.light[2]+','+useful.light[3]+')';
+            this.context.fillRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth , wallHeight+2)
+        }
+
+
+        if (DEBUG_MODE && pixelWidth > 5) {
+            this.context.strokeStyle = 'magenta';
+            this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
+        }
+    }
+
+    drawWallWithSkyboxTexture(ray, i, useful,img) {
+        const ctx = this.context;
+        let perpDistance = fixFishEye(useful.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
+        let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
+
+        //fix overdrawing ray bounds
+        let drawStart = Math.floor(i *pixelWidth)
+        let nextDrawStart = Math.floor((i+1) *pixelWidth)
+        let drawWidth = Math.floor(nextDrawStart - drawStart)
+
+        //draw Image
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1);
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 );
+        ctx.lineTo(drawStart+ drawWidth, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2 );
+        ctx.lineTo(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 + wallHeight+2);
+        ctx.closePath();
+        ctx.clip();
+        this.drawSkybox(img,drawStart,this.SCREEN_HEIGHT / 2 - wallHeight / 2-1 ,drawWidth,wallHeight+2)
+        ctx.restore();
+
+        if (DEBUG_MODE && pixelWidth > 5) {
+            this.context.strokeStyle = 'pink';
             this.context.strokeRect(drawStart, this.SCREEN_HEIGHT / 2 - wallHeight / 2-1, drawWidth, wallHeight+2)
         }
     }
@@ -479,10 +562,6 @@ class view {
     }
 
     castRay(angle,prevAngle) {
-        return this.getCollision(angle,prevAngle); //finds ray collisions with blocks
-    }
-
-    getCollision(angle,prevAngle) {
         let right = Boolean(Math.abs(Math.floor((angle - Math.PI / 2) / Math.PI) % 2)); //facing right
         let up = !Math.abs(Math.floor(angle / Math.PI) % 2); //facing up
 
@@ -497,12 +576,12 @@ class view {
         let mapY = Math.floor(this.player.y / CELL_SIZE) //grid cell player is in y coord
 
         //step forward rays
-
+        let totalTransparency = 1;
         let distance = 0;
         let count = 0
         let blocks = [] //set of all the blocks visited by the ray
-        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,this.world.getLightColour(mapX,mapY)) //can ignore sampling value on block you are standing in, assuming its not a wall
-        while (count <= MAX_RAY_DEPTH) {
+        pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,0,0,this.world.getLightColour(mapX,mapY),totalTransparency) //can ignore sampling value on block you are standing in, assuming its not a wall
+        while (count <= MAX_RAY_DEPTH && totalTransparency > MIN_TRANSPARENCY_ANY_BLOCKS) {
             count++;
             let vertical = sideDistX < sideDistY;
             //jump to next map square, either in x-direction, or in y-direction
@@ -532,7 +611,7 @@ class view {
                         const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
                         if(sample && sampleWidth)
                             pushBlocks(blocks, entity, mapX, mapY, this.distance(this.player.x, this.player.y, entity.x, entity.y),
-                                sample, sampleWidth,this.world.getLightColour(mapX, mapY))
+                                sample, sampleWidth,this.world.getLightColour(mapX, mapY),totalTransparency)
                     }
                 })
             }
@@ -560,17 +639,22 @@ class view {
                         light = blocks[blocks.length -1].light
 
                 }
-                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth, light)
+                pushBlocks(blocks,this.map[mapY][mapX], mapX, mapY, distance,horizontalSample,hSampleWidth, light,totalTransparency)
+            }
+            //adjust totalTransparency
+            if(this.map[mapY][mapX].isTransparent()){
+                totalTransparency -= this.map[mapY][mapX].getOpacity();
             }
 
             //Check if ray has hit a wall, end raycast.
             if (!this.map[mapY][mapX].isTransparent()) {
-                return {
-                    angle,
-                    blocks: blocks
-                };
+                break
             }
         }
+        return {
+            angle,
+            blocks: blocks
+        };
     }
 
     calcSample(vertical, distance, angle, mapQ,right,up) {
@@ -613,10 +697,10 @@ class view {
         let rotation = this.player.angle / (2 * Math.PI) - Math.floor(this.player.angle / (2 * Math.PI)) //btw 0 and 1
 
         let sXStart = rotation * img.width //[px]
-        let sXWidth = FOV / (2 * Math.PI) * img.width          //[px]
+        let sXWidth = FOV / (2 * Math.PI) * img.width //[px]
         this.context.drawImage(img, sXStart, 0, sXWidth, img.height, 0, 0, this.SCREEN_WIDTH, this.SCREEN_HEIGHT)
 
-        //reached right end of image
+        //reached the right end of the image
         if (sXStart + sXWidth > img.width) {
             let sXWDrawn = (img.width - sXStart)
             let sXWRemain = sXWidth - sXWDrawn
@@ -625,7 +709,7 @@ class view {
             let ScreenPosX = scale * sXWDrawn
             let ScreenRemainingX = scale * sXWRemain
 
-            this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX, 0, ScreenRemainingX, this.SCREEN_HEIGHT)
+            this.context.drawImage(img, 0, 0, sXWRemain, img.height, ScreenPosX-1, 0, ScreenRemainingX+1, this.SCREEN_HEIGHT)
         }
     }
 
@@ -1085,8 +1169,8 @@ function initMissingIMG() {
     imageSet[missingImgName] = loadIMG
 }
 
-function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth,light){
-    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth,light})
+function pushBlocks(blocks,block, mapX, mapY, distance,horizontalSample,hSampleWidth,light,totalTransparency){
+    blocks.push({block, mapX, mapY, distance,horizontalSample,hSampleWidth,light,totalTransparency})
 }
 
 function arraysEqual(a,b){
