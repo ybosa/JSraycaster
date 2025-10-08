@@ -131,8 +131,8 @@ class view {
         this.drawTexturedFloors(rays, drawnFloors, drawnCeilings);
 
         //render rays
-        rays.forEach((ray, i) => {
-
+        for (let i = 0; i < rays.length; i++) {
+            const ray =  rays[i];
             for (let j = ray.toDrawArray.length - 1; j >= 0; j--) {
                 const toDrawData = ray.toDrawArray[j]
                 const objectToDraw = toDrawData.toDraw
@@ -153,10 +153,8 @@ class view {
                 }
                 else if(objectToDraw.isWall())
                     this.drawWall(ray, i, toDrawData)
-
             }
-
-        });
+        };
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
     }
 
