@@ -10,6 +10,7 @@ import {
 } from "./config.js";
 import Block from "./block.js";
 import Light from "./light.js";
+import Sprite from "./sprite.js";
 
 let COLORS = {
     floor: "#376707", // "#ff6361"
@@ -126,8 +127,6 @@ class view {
         this.drawSkybox(getImage(this.world.sky))
         const drawnFloors = []
         const drawnCeilings = []
-
-
         this.drawTexturedFloors(rays, drawnFloors, drawnCeilings);
 
         //render rays
@@ -136,11 +135,19 @@ class view {
             for (let j = ray.toDrawArray.length - 1; j >= 0; j--) {
                 const toDrawData = ray.toDrawArray[j]
                 const objectToDraw = toDrawData.toDraw
-                //ignore out of bounds or invisible blocks
-                if(objectToDraw.sprite) {
+                //draw sprites
+                if(objectToDraw instanceof Sprite) {
                     this.drawSprite(ray, i, toDrawData)
                     continue
                 }
+                //filter out anything that isn't a Block
+                else if(!(objectToDraw instanceof Block)){
+                    console.warn("leaking invalid objects into render draw queue")
+                    continue
+                }
+
+                //render blocks
+                //ignore out of bounds or invisible blocks
                 if (objectToDraw.isInvisible()) continue
                 if(objectToDraw.isDrawBackgroundImgInstead()){
                     const img =  (objectToDraw.isUsingWallImageAsBackgroundImg() ? getImage(objectToDraw.getWallImageName()) : getImage(this.world.sky))
@@ -154,7 +161,7 @@ class view {
                 else if(objectToDraw.isWall())
                     this.drawWall(ray, i, toDrawData)
             }
-        };
+        }
         //    https://www.youtube.com/watch?v=8RDBa3dkl0g
     }
 
