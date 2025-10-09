@@ -11,16 +11,16 @@ class Controller{
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowUp" || e.key === "w") {
-                player.speed = 5*CELL_SIZE;
+                player.setSpeed(5*CELL_SIZE);
             }
             if (e.key === "ArrowDown" || e.key === "s") {
-                player.speed = -2*CELL_SIZE;
+                player.setSpeed(-2*CELL_SIZE);
             }
             if (e.key === "ArrowRight" || e.key === "d") {
-                player.sidewaysSpeed = 2*CELL_SIZE;
+                player.setSidewaysSpeed(2*CELL_SIZE);
             }
             if (e.key === "ArrowLeft" || e.key === "a") {
-                player.sidewaysSpeed = -2*CELL_SIZE;
+                player.setSidewaysSpeed(-2*CELL_SIZE);
             }
             if (e.key === "m"){
                 DEBUGVARS.setMinimap(!MINIMAP);
@@ -50,15 +50,15 @@ class Controller{
 
         document.addEventListener("keyup", (e) => {
             if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "w" || e.key === "s") {
-                player.speed = 0;
+                player.setSpeed(0);
             }
             if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "a" || e.key === "d") {
-                player.sidewaysSpeed = 0;
+                player.setSidewaysSpeed(0);
             }
         });
 
         document.addEventListener("mousemove", function (event) {
-            player.angle += toRadians(event.movementX / 10);
+            player.setAngle( player.getAngle() + toRadians(event.movementX / 10));
         });
 
     }

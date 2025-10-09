@@ -38,8 +38,9 @@ $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 
 #11) fix GitHub preview not working, or replace with something else to send a link to people https://raw.githack.com/ybosa/JSraycaster/main/index.html
 
-12) rework view rendering code.
+#12) rework view rendering code.
 13) refactor other classes to use getters
+14) move ceiling/ floor drawing logic into main render logic loop so sprites dont overdraw floors / ceilings
 
 20) better image loading, not lazy method,
 21) game shouldn't crash if an img load fails!
@@ -56,7 +57,7 @@ $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 100) replace solid colour floor draw with an average over a given distance to anti alias long distance draws
     potentialy draw for a max of x pixels before switching to next draw colour?
 
-110) use affine textures for walls
+110) use affine textures for walls - check performance clipping may be too costly
     potentialy only for long distance? obscured by a another object etc
 
 200) redo entire algo sort everything by distance and draw one after the other so sprites dont draw over ceilings

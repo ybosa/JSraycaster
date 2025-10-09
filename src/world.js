@@ -121,8 +121,8 @@ class World{
         let y = Math.floor(mapY)
         if(this.entities[x+","+y] && this.entities[x+","+y].length > 1 ) {
             this.entities[mapX + "," + mapY].sort((a, b) => //FIXME WHY IS THIS HERE, IS IT NEEDED?
-                ((player.x - a.x) * (player.x - a.x) + (player.y - a.y) * (player.y - a.y) )-
-                ((player.x - b.x) * (player.x - b.x) + (player.y - b.y) * (player.y - b.y)))
+                ((player.getX() - a.x) * (player.getX() - a.x) + (player.getY() - a.y) * (player.getY() - a.y) )-
+                ((player.getX() - b.x) * (player.getX() - b.x) + (player.getY() - b.y) * (player.getY() - b.y)))
         }
         return this.entities[x+","+y]
     }

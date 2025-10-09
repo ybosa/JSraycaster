@@ -47,7 +47,7 @@ class view {
         this.context.imageSmoothingEnabled = false;
 
         this.player = player;
-        this.world = player.world;
+        this.world = player.getWorld();
         this.map = this.world.map;
 
         if (MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
@@ -94,18 +94,18 @@ class view {
         });
         this.context.fillStyle = "blue";
         this.context.fillRect(
-            posX + this.player.x * scale - 10 / 2,
-            posY + this.player.y * scale - 10 / 2,
+            posX + this.player.getX() * scale - 10 / 2,
+            posY + this.player.getY() * scale - 10 / 2,
             10,
             10
         );
 
         this.context.strokeStyle = "blue";
         this.context.beginPath();
-        this.context.moveTo(this.player.x * scale, this.player.y * scale);
+        this.context.moveTo(this.player.getX() * scale, this.player.getY() * scale);
         this.context.lineTo(
-            (this.player.x + Math.cos(this.player.angle) * 20) * scale,
-            (this.player.y + Math.sin(this.player.angle) * 20) * scale
+            (this.player.getX() + Math.cos(this.player.getAngle()) * 20) * scale,
+            (this.player.getY() + Math.sin(this.player.getAngle()) * 20) * scale
         );
         this.context.closePath();
         this.context.stroke();
@@ -113,10 +113,10 @@ class view {
         this.context.strokeStyle = COLORS.rays;
         rays.forEach((ray) => {
             this.context.beginPath();
-            this.context.moveTo(this.player.x * scale, this.player.y * scale);
+            this.context.moveTo(this.player.getX() * scale, this.player.getY() * scale);
             this.context.lineTo(
-                (this.player.x + Math.cos(ray.angle) * ray.toDrawArray[ray.toDrawArray.length -1].distance) * scale,
-                (this.player.y + Math.sin(ray.angle) * ray.toDrawArray[ray.toDrawArray.length -1].distance) * scale
+                (this.player.getX() + Math.cos(ray.angle) * ray.toDrawArray[ray.toDrawArray.length -1].distance) * scale,
+                (this.player.getY() + Math.sin(ray.angle) * ray.toDrawArray[ray.toDrawArray.length -1].distance) * scale
             );
             this.context.closePath();
             this.context.stroke();
@@ -176,7 +176,7 @@ class view {
                     continue
                 }
 
-                const distance = this.distance(toDrawData.mapX * CELL_SIZE, toDrawData.mapY * CELL_SIZE, this.player.x, this.player.y)
+                const distance = this.distance(toDrawData.mapX * CELL_SIZE, toDrawData.mapY * CELL_SIZE, this.player.getX(), this.player.getY())
                 if (distance > FLOOR_TEXTURED_DRAW_MAX_DIST * CELL_SIZE && FLOOR_TEXTURED_DRAW_MAX_DIST >= 0) continue;
 
                 if (!(drawnFloors[toDrawData.mapY] && drawnFloors[toDrawData.mapY][toDrawData.mapX]) && !(block.isInvisible() || block.isDrawBackgroundImgInstead())) {
@@ -228,7 +228,7 @@ class view {
         let block = toDrawData.toDraw
         if(block.isTransparent() && toDrawData.totalTransparency < MIN_TRANSPARENCY_TRANSPARENT_BLOCKS) return
 
-        let perpDistance = fixFishEye(toDrawData.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let perpDistance = fixFishEye(toDrawData.distance, ray.angle, this.player.getAngle());//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.getWallImageName())
@@ -282,7 +282,7 @@ class view {
         let block = toDrawData.toDraw
         if(block.isTransparent() && toDrawData.totalTransparency < MIN_TRANSPARENCY_TRANSPARENT_BLOCKS) return
 
-        let perpDistance = fixFishEye(toDrawData.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let perpDistance = fixFishEye(toDrawData.distance, ray.angle, this.player.getAngle());//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
         let img = getImage(block.getWallImageName())
@@ -322,7 +322,7 @@ class view {
 
     drawWallWithSkyboxTexture(ray, i, toDrawData,img) {
         const ctx = this.context;
-        let perpDistance = fixFishEye(toDrawData.distance, ray.angle, this.player.angle);//[m] dist to wall
+        let perpDistance = fixFishEye(toDrawData.distance, ray.angle, this.player.getAngle());//[m] dist to wall
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
 
@@ -385,15 +385,15 @@ class view {
 
     calculateSpriteSample(sprite,rayAngle){
         //Can be greater than 2pi
-        let playerWithSpriteAngle = Math.atan2((sprite.y-this.player.y),(sprite.x-this.player.x)) -this.player.angle
-        rayAngle = rayAngle -this.player.angle
+        let playerWithSpriteAngle = Math.atan2((sprite.y-this.player.getY()),(sprite.x-this.player.getX())) -this.player.getAngle()
+        rayAngle = rayAngle -this.player.getAngle()
 
 
 
         //FIXME drawing sprites when behind player
         //FIXME not drawing sides of  sprites when close to player
 
-        return 1/2 + this.distance(this.player.x,this.player.y,sprite.x,sprite.y)/sprite.width*
+        return 1/2 + this.distance(this.player.getX(),this.player.getY(),sprite.x,sprite.y)/sprite.width*
             (Math.cos(playerWithSpriteAngle)* Math.tan(rayAngle ) - Math.sin(playerWithSpriteAngle) )
     }
 
@@ -412,12 +412,12 @@ class view {
         const deltaDistX = Math.abs(CELL_SIZE / Math.cos(angle)); //Increase in ray dist after every move 1 cell x wards
         const deltaDistY = Math.abs(CELL_SIZE / Math.sin(angle)); //Increase in ray dist after every move 1 cell y wards
 
-        let sideDistX = (right) ? CELL_SIZE * (Math.floor(this.player.x / CELL_SIZE) + 1 - this.player.x / CELL_SIZE) / Math.cos(angle) : CELL_SIZE * (Math.floor(this.player.x / CELL_SIZE) - this.player.x / CELL_SIZE) / Math.cos(angle)//distance to the next vertical wall
+        let sideDistX = (right) ? CELL_SIZE * (Math.floor(this.player.getX() / CELL_SIZE) + 1 - this.player.getX() / CELL_SIZE) / Math.cos(angle) : CELL_SIZE * (Math.floor(this.player.getX() / CELL_SIZE) - this.player.getX() / CELL_SIZE) / Math.cos(angle)//distance to the next vertical wall
         sideDistX = Math.abs(sideDistX)
-        let sideDistY = (up) ? CELL_SIZE * (Math.floor(this.player.y/ CELL_SIZE) + 1 - this.player.y/ CELL_SIZE) / Math.sin(angle) :CELL_SIZE * (Math.floor(this.player.y/CELL_SIZE) - this.player.y/CELL_SIZE) / Math.sin(angle)   //distance to the next horizontal wall
+        let sideDistY = (up) ? CELL_SIZE * (Math.floor(this.player.getY()/ CELL_SIZE) + 1 - this.player.getY()/ CELL_SIZE) / Math.sin(angle) :CELL_SIZE * (Math.floor(this.player.getY()/CELL_SIZE) - this.player.getY()/CELL_SIZE) / Math.sin(angle)   //distance to the next horizontal wall
         sideDistY = Math.abs(sideDistY)
-        let mapX = Math.floor(this.player.x / CELL_SIZE) //grid cell player is in x coord
-        let mapY = Math.floor(this.player.y / CELL_SIZE) //grid cell player is in y coord
+        let mapX = Math.floor(this.player.getX() / CELL_SIZE) //grid cell player is in x coord
+        let mapY = Math.floor(this.player.getY() / CELL_SIZE) //grid cell player is in y coord
 
         //step forward rays
         let totalTransparency = 1;
@@ -454,7 +454,7 @@ class view {
                         const sample = this.calculateSpriteSample(entity, angle)
                         const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
                         if(sample && sampleWidth)
-                            pushToDrawArray(toDrawArray, entity, mapX, mapY, this.distance(this.player.x, this.player.y, entity.x, entity.y),
+                            pushToDrawArray(toDrawArray, entity, mapX, mapY, this.distance(this.player.getX(), this.player.getY(), entity.x, entity.y),
                                 sample, sampleWidth,this.world.getLightColour(mapX, mapY),totalTransparency)
                     }
                 })
@@ -474,7 +474,7 @@ class view {
 
 
                     let angleStep = FOV / this.numberOfRays
-                    let nextDistance = (vertical) ? (( CELL_SIZE *  (mapX + addAHwall) - this.player.x) / Math.cos(angle + angleStep))  : (CELL_SIZE *  (mapY+addAVwall) - this.player.y) / Math.cos(angle + angleStep- Math.PI / 2)
+                    let nextDistance = (vertical) ? (( CELL_SIZE *  (mapX + addAHwall) - this.player.getX()) / Math.cos(angle + angleStep))  : (CELL_SIZE *  (mapY+addAVwall) - this.player.getY()) / Math.cos(angle + angleStep- Math.PI / 2)
                     let NextHorizontalSample = (vertical) ? this.calcSample(vertical, nextDistance, angle+ angleStep, mapY,right,up) : this.calcSample(vertical, nextDistance, angle+ angleStep, mapX,right,up);
                     hSampleWidth = NextHorizontalSample - horizontalSample;
 
@@ -503,7 +503,7 @@ class view {
 
     calcSample(vertical, distance, angle, mapQ,right,up) {
         const inv = (!vertical) ? up : !right
-        const sample = (vertical) ? (distance * Math.sin(angle) + this.player.y) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + this.player.x) / CELL_SIZE - mapQ
+        const sample = (vertical) ? (distance * Math.sin(angle) + this.player.getY()) / CELL_SIZE - mapQ : (distance * Math.cos(angle) + this.player.getX()) / CELL_SIZE - mapQ
 
         return (inv) ? 1- sample : sample
     }
@@ -518,7 +518,7 @@ class view {
     }
 
     getRays() {
-        let initialAngle = this.player.angle
+        let initialAngle = this.player.getAngle()
         let prevAngle = initialAngle
         // let angleStep = FOV / this.numberOfRays;
         return Array.from({length: this.numberOfRays}, (_, i) => {
@@ -538,7 +538,7 @@ class view {
     }
 
     drawSkybox(img) {
-        let rotation = this.player.angle / (2 * Math.PI) - Math.floor(this.player.angle / (2 * Math.PI)) //btw 0 and 1
+        let rotation = this.player.getAngle() / (2 * Math.PI) - Math.floor(this.player.getAngle() / (2 * Math.PI)) //btw 0 and 1
 
         let sXStart = rotation * img.width //[px]
         let sXWidth = FOV / (2 * Math.PI) * img.width //[px]
@@ -596,7 +596,7 @@ class view {
     drawATexturedFloorOrCeiling(MapY,MapX,floor,lightValue){
         const ctx = this.context;
         ctx.save();
-        const distance = this.distance(this.player.x,this.player.y,MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;
+        const distance = this.distance(this.player.getX(),this.player.getY(),MapX*CELL_SIZE,MapY*CELL_SIZE)/CELL_SIZE;
 
         const TL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY,floor)
         const BL_BlockScreenCord =  this.worldCordToScreenCord(MapX,MapY+1,floor)
@@ -923,18 +923,18 @@ class view {
         const x = MapX * CELL_SIZE
         const y = MapY * CELL_SIZE
         //convert from position (x,y) to position(theta, distance)
-        const distance = this.distance(x,y,this.player.x,this.player.y)
-        let angle = Math.atan2(y-this.player.y,x-this.player.x)
+        const distance = this.distance(x,y,this.player.getX(),this.player.getY())
+        let angle = Math.atan2(y-this.player.getY(),x-this.player.getX())
 
-        if(!floor) angle =  Math.atan2(this.player.y-y,this.player.x-x)
+        if(!floor) angle =  Math.atan2(this.player.getY()-y,this.player.getX()-x)
 
         //convert from position(theta, distance) to screen postion(i,j)
-        let alpha =  (angle - this.player.angle + FOV/2)
+        let alpha =  (angle - this.player.getAngle() + FOV/2)
 
         /* how angle correction works in ray cast
         // let angleStep = FOV / this.numberOfRays;
         let dAngle = Math.atan((i - this.numberOfRays/2 )*this.distanceBetweenRaysOnScreen  )
-        let angle = player.angle + dAngle
+        let angle = player.getAngle() + dAngle
         */
 
         /*reverse correction to find i    (i is proportion of screen not pixels)
@@ -942,19 +942,19 @@ class view {
         (i - this.numberOfRays/2 ) = tan (dangle) / this.distanceBetweenRaysOnScreen
         i = tan (dangle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
 
-        angle = player.angle + dAngle
-        dAngle = angle - player.angle
+        angle = player.getAngle() + dAngle
+        dAngle = angle - player.getAngle()
 
-        i = tan (angle - player.angle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
+        i = tan (angle - player.getAngle()) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2
 
         */
 
 
         // let i = alpha/FOV * this.SCREEN_WIDTH / number of rays //fixme, distorted at angles to player, the error is that the delta between each ray is not constant!
 
-        let i = (Math.tan (angle - this.player.angle) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2) * (this.SCREEN_WIDTH / this.numberOfRays)
+        let i = (Math.tan (angle - this.player.getAngle()) / this.distanceBetweenRaysOnScreen + this.numberOfRays/2) * (this.SCREEN_WIDTH / this.numberOfRays)
 
-        let j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, this.player.angle)/2)
+        let j =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(distance, angle, this.player.getAngle())/2)
 
         return this.floorScreenCord({i,j,angle,distance})
     }
@@ -992,10 +992,10 @@ class view {
                     let nextDrawHorizStart = Math.floor((i+1) *pixelWidth)
                     let drawWidth = Math.floor(nextDrawHorizStart - drawHorizStart)
 
-                    let distWall = fixFishEye(useful.distance, ray.angle, this.player.angle)
+                    let distWall = fixFishEye(useful.distance, ray.angle, this.player.getAngle())
                     let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / distWall //[px]height of wall
                     // calc floor/ceiling screen height based on wall height
-                    let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, this.player.angle)/2)
+                    let drawStart =(this.SCREEN_HEIGHT / 2 + CELL_SIZE *this.SCREEN_HEIGHT /fixFishEye(previousBlock.distance, ray.angle, this.player.getAngle())/2)
                     if(! skipDrawFloor && drawStart > this.SCREEN_HEIGHT) {}
                     else {
                         let drawEnd = this.SCREEN_HEIGHT / 2 + wallHeight / 2
