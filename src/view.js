@@ -22,6 +22,7 @@ let COLORS = {
 let FOV = toRadians(75);
 
 let imageSet = new Set();
+let averageImageColourSet = new Set();
 let missingIMGSet = new Set();
 let missingImgName = "missing.png"
 initMissingIMG()
@@ -76,20 +77,20 @@ class view {
         let scale = this.SCREEN_WIDTH / (this.map.length * CELL_SIZE) * screenPortion  //[px/m] meters to pixels
         let cellSize = scale * CELL_SIZE; //[px] pixels each cell takes up
         this.map.forEach((row, y) => {
-            row.forEach((cell, x) => {
-                if(!cell) return
-                if(! (cell instanceof Block)){
-                    console.error("cell is not a block: x" + x +", y" + y );
-                    console.error(cell)
+            row.forEach((block, x) => {
+                if(!block) return
+                if(! (block instanceof Block)){
+                    console.error("map contains blocks that are not a block at: x" + x +", y" + y );
+                    console.error(block)
                     return;
                 }
 
-                if(cell.isFloor()){
-                    this.context.fillStyle =Light.colourToRGBA( Light.applyLightColourToBlock(cell.getFloorColour(),this.world.getLightColour(x,y)))
+                if(block.isFloor()){
+                    this.context.fillStyle =Light.colourToRGBA( Light.applyLightColourToBlock(getAverageImageColour(block.getFloorImageName()),this.world.getLightColour(x,y)))
                     this.context.fillRect(posX + x * cellSize, posY + y * cellSize, cellSize, cellSize);
                 }
-                else if(cell.isWall())
-                    this.context.drawImage(getImage(cell.getWallImageName()), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
+                else if(block.isWall())
+                    this.context.drawImage(getImage(block.getWallImageName()), posX + x * cellSize, posY + y * cellSize, cellSize, cellSize)
             });
         });
         this.context.fillStyle = "blue";
@@ -1163,12 +1164,27 @@ function fixFishEye(distance, angle, playerAngle) {
 }
 
 function getImage(imageName) {
-    if(!imageName) return missingImgName
+    if(!imageName) return imageSet[missingImgName]
     if (imageSet[imageName]) {
         return imageSet[imageName]
     } else {
         missingIMGSet.add(imageName)
         return imageSet[missingImgName]
+    }
+}
+
+function getAverageImageColour(imageName){
+    if(!imageName) return averageImageColourSet[missingImgName]
+    if (averageImageColourSet[imageName]) {
+        return averageImageColourSet[imageName]
+    }
+    if(!averageImageColourSet[missingImgName] && imageSet[imageName]){
+        if(DEBUG_MODE) console.error("degenerated state, imageSet is populated when averageImageColourSet is not for: " + imageName)
+        return averageImageColourSet[missingImgName]
+    }
+    else {
+        missingIMGSet.add(imageName)
+        return averageImageColourSet[missingImgName]
     }
 }
 
@@ -1184,6 +1200,7 @@ function loadImages() {
         loadIMG.onload = () => {
             imageSet[imageName] = loadIMG
             missingIMGSet.delete(imageName)
+            averageImageColourSet[imageName] = calculateAverageColorFromImage(loadIMG)
             if (DEBUG_MODE) console.log("loaded img: " + imageName)
         }
         loadIMG.onerror = () => {
@@ -1191,6 +1208,7 @@ function loadImages() {
                 console.log("error loading image: " + imageName)
             }
             imageSet[imageName] = imageSet[missingImgName]
+            averageImageColourSet[imageName] = averageImageColourSet[missingImgName]
             missingIMGSet.delete(imageName)
         }
 
@@ -1198,11 +1216,59 @@ function loadImages() {
 
 }
 
+function calculateAverageColorFromImage(img) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Match canvas size to image
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    // Draw image onto the canvas
+    ctx.drawImage(img, 0, 0);
+
+    // Get pixel data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    let r = 0, g = 0, b = 0;
+    const totalPixels = data.length / 4;
+
+    for (let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+    }
+
+    // Compute average
+    r = Math.round(r / totalPixels);
+    g = Math.round(g / totalPixels);
+    b = Math.round(b / totalPixels);
+    return [r,g,b,1]
+}
+
 function initMissingIMG() {
-    let loadIMG = new Image()
-    loadIMG.src = IMAGE_PATH + missingImgName
-    if (!loadIMG) console.log("error loading missing image placeholder")
-    imageSet[missingImgName] = loadIMG
+    // Create a 8x8 canvas
+    const size = 8;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    // Draw checkerboard pattern
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const isBlack = (x + y) % 2 === 0;
+            ctx.fillStyle = isBlack ? "#000000" : "#FF00FF";
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+
+    // Convert canvas to Image object
+    const loadIMG = new Image();
+    loadIMG.src = canvas.toDataURL("image/png");
+    imageSet[missingImgName] = loadIMG;
+    averageImageColourSet[missingImgName] = "[150,0,150,1]";
 }
 
 function pushToDrawArray(toDrawArray, toDraw, mapX, mapY, distance, horizontalSample, hSampleWidth, light, totalTransparency){

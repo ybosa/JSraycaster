@@ -21,8 +21,6 @@ function generateDemoMap(world){
         floor:true,
         wall:false,
 
-        floorColour :[200,200,200,1],
-        ceilingColour : [200,200,200,1],
         ceilingImageName:"white.png",
         floorImageName:"white.png"
     })
@@ -33,8 +31,6 @@ function generateDemoMap(world){
         ceiling:true,
         floor:true,
         wall:false,
-        floorColour :[200,200,200,1],
-        ceilingColour : [50,50,50,1],
 
         ceilingImageName:"white.png",
         floorImageName:"black.png"
@@ -44,8 +40,6 @@ function generateDemoMap(world){
         transparent:true,
         ceiling:true,
         floor:true,
-        floorColour :[166,152,143,1],
-        ceilingColour : [125,123,112,1],
         wallImageName:"bars.png",
         ceilingImageName:"rubble.png",
         floorImageName:"rubble.png"
@@ -61,8 +55,6 @@ function generateDemoMap(world){
             floor:true,
             wall:false,
 
-            floorColour: [166 - delta / 2 + Math.random() * delta, 152 - delta / 2 + Math.random() * delta, 143 - delta / 2 + Math.random() * delta, 1],
-            ceilingColour: [125 - delta / 2 + Math.random() * delta, 123 - delta / 2 + Math.random() * delta, 112 - delta / 2 + Math.random() * delta, 1],
             passable: true,
             transparent: true,
             ceilingImageName:"rubble.png",
@@ -91,7 +83,6 @@ function generateDemoMap(world){
             floor:true,
             wall:false,
             ceiling: false,
-            floorColour: [155 - delta / 2 + Math.random() * delta, 155 - delta / 2 + Math.random() * delta, 155 - delta / 2 + Math.random() * delta, 1],
             passable: true,
             transparent: true,
             ceilingImageName:"gravel.png",
@@ -103,7 +94,6 @@ function generateDemoMap(world){
         floor:true,
         wall:false,
         ceiling: false,
-        floorColour: [155 ,155,155,1],
         passable: true,
         transparent: true,
         ceilingImageName:"gravel.png",
@@ -162,8 +152,6 @@ function generateDemoMap(world){
         ceiling:true,
         floor:true,
         wallImageName:"white.png",
-        ceilingColour : [255,255,255,1],
-        floorColour : [255,255,255,1],
         passable: true,
         transparent: true,
         ceilingImageName:"white.png",
@@ -188,7 +176,7 @@ function generateDemoMap(world){
             wall:false,
             ceiling : false,
             floorImageName:"gravel.png",
-            floorColour: [155,155,155,1]}
+        }
 
     )
 
@@ -212,8 +200,6 @@ function generateDemoMap(world){
     fillAreaWithFunc(map,()=>{
         const delta = 10
         return new Block({
-            floorColour: [166 - delta / 2 + Math.random() * delta, 152 - delta / 2 + Math.random() * delta, 143 - delta / 2 + Math.random() * delta, 1],
-            ceilingColour: [125 - delta / 2 + Math.random() * delta, 123 - delta / 2 + Math.random() * delta, 112 - delta / 2 + Math.random() * delta, 1],
             wallImageName: "rubble.png",
             ceilingImageName:"rubble.png",
             floorImageName:"rubble.png",

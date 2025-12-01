@@ -40,12 +40,12 @@ $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 
 #12) rework view rendering code.
 #13) refactor other classes to use getters
-14) move ceiling/ floor drawing logic into main render logic loop so sprites don't overdraw floors / ceilings
+!!!!!14) move ceiling/ floor drawing logic into main render logic loop so sprites don't overdraw floors / ceilings. too hard to bother for now
 
 #20) better image loading, not lazy method,
 #21) game shouldn't crash if an img load fails!
 
-22) generate floor and ceiling colour on the fly if not provided, based on image colour
+#22) generate floor and ceiling colour on the fly if not provided, based on image colour
 23) consider generating lower res textures (mipmapping?) from provided texture for far away textures. Improve performance? or just to remove jitter
 24) allow texturing blocks based on direction and time!
 25) fix the floors drawing underneath walls (issue 5.2) code so that it generates a new image using the bottom edge of the texture (or rotates img to align with floor base).
