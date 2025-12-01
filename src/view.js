@@ -10,7 +10,7 @@ import {
 } from "./config.js";
 import Block from "./block.js";
 import Light from "./light.js";
-import Sprite from "./sprite.js";
+import Entity from "./entity.js";
 
 let COLORS = {
     floor: "#376707", // "#ff6361"
@@ -136,7 +136,7 @@ class view {
                 const toDrawData = ray.toDrawArray[j]
                 const objectToDraw = toDrawData.toDraw
                 //draw sprites
-                if(objectToDraw instanceof Sprite) {
+                if(objectToDraw instanceof Entity && objectToDraw.hasSprite() ) {
                     this.drawSprite(ray, i, toDrawData)
                     continue
                 }
@@ -350,12 +350,13 @@ class view {
     }
 
     drawSprite(ray, i, toDrawData){
-        let sprite = toDrawData.toDraw
+        let entity = toDrawData.toDraw
+
         let perpDistance = toDrawData.distance//[m] ignore perpendicular distance for sprites
         let wallHeight = CELL_SIZE * this.SCREEN_HEIGHT / perpDistance //[px]height of wall
-        let spriteHeight = this.SCREEN_HEIGHT / perpDistance * sprite.height //[px]height of wall
+        let spriteHeight = this.SCREEN_HEIGHT / perpDistance * entity.getHeight() //[px]height of wall
         let pixelWidth = this.SCREEN_WIDTH / this.numberOfRays //[px]width of each ray in px
-        let img = getImage(sprite.imageName)
+        let img = getImage(entity.getSpriteImageName())
 
         //process image sampling
         let sampleImageHorizontal = (Math.floor(toDrawData.horizontalSample * img.width))
@@ -383,9 +384,9 @@ class view {
         }
     }
 
-    calculateSpriteSample(sprite,rayAngle){
+    calculateSpriteSample(entity,rayAngle){
         //Can be greater than 2pi
-        let playerWithSpriteAngle = Math.atan2((sprite.y-this.player.getY()),(sprite.x-this.player.getX())) -this.player.getAngle()
+        let playerWithSpriteAngle = Math.atan2((entity.getY()-this.player.getY()),(entity.getX()-this.player.getX())) -this.player.getAngle()
         rayAngle = rayAngle -this.player.getAngle()
 
 
@@ -393,13 +394,13 @@ class view {
         //FIXME drawing sprites when behind player
         //FIXME not drawing sides of  sprites when close to player
 
-        return 1/2 + this.distance(this.player.getX(),this.player.getY(),sprite.x,sprite.y)/sprite.width*
+        return 1/2 + this.distance(this.player.getX(),this.player.getY(),entity.getX(),entity.getY())/entity.getWidth()*
             (Math.cos(playerWithSpriteAngle)* Math.tan(rayAngle ) - Math.sin(playerWithSpriteAngle) )
     }
 
-    calculateSpriteSampleWidth(sprite,rayAngle, prevAngle){
-        let sampleEnd = this.calculateSpriteSample(sprite,rayAngle)
-        let sampleStart = this.calculateSpriteSample(sprite,prevAngle)
+    calculateSpriteSampleWidth(entity,rayAngle, prevAngle){
+        let sampleEnd = this.calculateSpriteSample(entity,rayAngle)
+        let sampleStart = this.calculateSpriteSample(entity,prevAngle)
         if(!sampleEnd || !sampleStart)
             return undefined
         return Math.abs(sampleEnd - sampleStart )
@@ -450,11 +451,11 @@ class view {
             //not out of bounds so add sprite to array if it exists
             if(this.world.getEntities(mapX,mapY) && this.world.getEntities(mapX,mapY).length > 0 ){
                 this.world.getEntities(mapX,mapY).forEach((entity) =>{
-                    if(entity.sprite) {
+                    if(entity.hasSprite()) {
                         const sample = this.calculateSpriteSample(entity, angle)
                         const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
                         if(sample && sampleWidth)
-                            pushToDrawArray(toDrawArray, entity, mapX, mapY, this.distance(this.player.getX(), this.player.getY(), entity.x, entity.y),
+                            pushToDrawArray(toDrawArray, entity, mapX, mapY, this.distance(this.player.getX(), this.player.getY(), entity.getX(), entity.getY()),
                                 sample, sampleWidth,this.world.getLightColour(mapX, mapY),totalTransparency)
                     }
                 })
