@@ -39,8 +39,8 @@ $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 #11) fix GitHub preview not working, or replace with something else to send a link to people https://raw.githack.com/ybosa/JSraycaster/main/index.html
 
 #12) rework view rendering code.
-13) refactor other classes to use getters
-14) move ceiling/ floor drawing logic into main render logic loop so sprites dont overdraw floors / ceilings
+#13) refactor other classes to use getters
+14) move ceiling/ floor drawing logic into main render logic loop so sprites don't overdraw floors / ceilings
 
 20) better image loading, not lazy method,
 21) game shouldn't crash if an img load fails!

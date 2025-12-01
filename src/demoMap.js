@@ -6,10 +6,7 @@ import Block from "./block.js";
 import Entity from "./entity.js";
 
 function generateDemoMap(world){
-    world.entities = new Set()
-    world.map = world.genMap(50,50)
-    world.lightMap = world.genLightMap(world.map)
-    const map = world.map
+    const map = world.getMap()
 
     const air = new Air()
     let stoneWall = new Block({wallImageName:"wall.png"})
@@ -308,7 +305,7 @@ class bed extends Entity{
 
 class tree extends Entity{
     constructor(x, y, world) {
-        super(x, y,CELL_SIZE*1.5,2.25 * CELL_SIZE,"tree.png",null,false);
+        super(x, y,CELL_SIZE,2.25 * CELL_SIZE,"tree.png",null,false);
         world.putEntity(this)
     }
 }

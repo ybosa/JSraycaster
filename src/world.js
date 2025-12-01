@@ -4,10 +4,10 @@ import {CELL_SIZE} from "./config.js";
 import Entity from "./entity.js";
 
 class World{
-    map;
-    lightMap; // contains an object of {colour value , [array of light sources]}
-    sky = "sky.png"
-    entities = new Set();
+    #map;
+    #lightMap; // contains an object of {colour value , [array of light sources]}
+    #sky = "sky.png"
+    #entities = new Set();
 
     //TODO IMPLEMENT ENTITY COLLISION
     collides(x,y,player){
@@ -23,14 +23,14 @@ class World{
             }
         }
 
-        return this.outOfMapBounds(mapX,mapY) || !this.map[mapY][mapX].isPassable()
+        return this.outOfMapBounds(mapX,mapY) || !this.#map[mapY][mapX].isPassable()
     }
 
     outOfMapBounds(mapX, mapY) {
-        return mapX < 0 || mapX >= this.map[0].length || mapY < 0 || mapY >= this.map.length;
+        return mapX < 0 || mapX >= this.#map[0].length || mapY < 0 || mapY >= this.#map.length;
     }
 
-    genMap(x = 25,y=25){
+    genMap(x ,y){
         let block = new oldBlock({wallImageName:"wall.png"})
 
         let glass= new Glass()
@@ -64,7 +64,7 @@ class World{
     }
 
     genLightMap(map){
-        // if(!this.map && !this.map.length && !this.map[0].length) return null
+        // if(!this.#map && !this.#map.length && !this.#map[0].length) return null
         let lenY = map.length
         let lenX = map[0].length
 
@@ -94,23 +94,23 @@ class World{
         const light = entity.getLight()
         //FIXME DEBUG THE BOUNDARY AND STOPPING CONDITIONS
         if(!light || i < 0 || this.outOfMapBounds(mapX,mapY) ||
-            !this.map[mapY][mapX].isTransparent()  )return
+            !this.#map[mapY][mapX].isTransparent()  )return
 
-        else if(!this.lightMap[mapY][mapX]) {
+        else if(!this.#lightMap[mapY][mapX]) {
             let colour = light.calcColourAtDist(entityX,entityY, mapX*CELL_SIZE,mapY*CELL_SIZE);
             if(colour) {
                 let lightEntities = []
                 lightEntities.push(entity)
-                this.lightMap[mapY][mapX] = {colour, lightEntities: lightEntities}
+                this.#lightMap[mapY][mapX] = {colour, lightEntities: lightEntities}
                 visited[mapY + "," + mapX] = i
             }
         }
-        else if(this.lightMap[mapY][mapX].lightEntities.includes(entity)){return;}
+        else if(this.#lightMap[mapY][mapX].lightEntities.includes(entity)){return;}
         else {
-            let lightEntities =this.lightMap[mapY][mapX].lightEntities
+            let lightEntities =this.#lightMap[mapY][mapX].lightEntities
             lightEntities.push(entity)
             let colour = entity.getLight().averageColourValues(lightEntities,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
-            this.lightMap[mapY][mapX] = {colour,lightEntities}
+            this.#lightMap[mapY][mapX] = {colour,lightEntities}
             visited[ mapY+","+mapX] =i
         }
         this.#placeLightHelper(entity,mapX,mapY+1,i-1,visited)
@@ -120,19 +120,19 @@ class World{
     }
 
     getLightColour(mapX,mapY){
-        if(this.lightMap[mapY][mapX]) return this.lightMap[mapY][mapX].colour
+        if(this.#lightMap[mapY][mapX]) return this.#lightMap[mapY][mapX].colour
         else return null
     }
 
     getEntities(mapX, mapY,player){
         let x = Math.floor(mapX)
         let y = Math.floor(mapY)
-        if(this.entities[x+","+y] && this.entities[x+","+y].length > 1 && player) {
-            this.entities[mapX + "," + mapY].sort((a, b) =>
+        if(this.#entities[x+","+y] && this.#entities[x+","+y].length > 1 && player) {
+            this.#entities[mapX + "," + mapY].sort((a, b) =>
                 ((player.getX() - a.getX()) * (player.getX() - a.getX()) + (player.getY() - a.getY()) * (player.getY() - a.getY()) )-
                 ((player.getX() - b.getX()) * (player.getX() - b.getX()) + (player.getY() - b.getY()) * (player.getY() - b.getY())))
         }
-        return this.entities[x+","+y]
+        return this.#entities[x+","+y]
     }
 
     putEntity(entity){
@@ -170,15 +170,22 @@ class World{
     }
 
     putEntityCoords(entity, mapX,mapY){
-        if(!this.entities[mapX+","+mapY]){
-            this.entities[mapX+","+mapY] = []
+        if(!this.#entities[mapX+","+mapY]){
+            this.#entities[mapX+","+mapY] = []
         }
-        this.entities[mapX+","+mapY].push(entity)
+        this.#entities[mapX+","+mapY].push(entity)
     }
 
-    constructor() {
-        this.map = this.genMap()
-        this.lightMap = this.genLightMap(this.map)
+    getMap(){return this.#map}
+
+    getLightMap(){return this.#lightMap}
+
+    getSky(){return this.#sky}
+
+    constructor(x,y) {
+        this.#entities = new Set()
+        this.#map = this.genMap(x,y)
+        this.#lightMap = this.genLightMap(this.#map)
     }
 }
 

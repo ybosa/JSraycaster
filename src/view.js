@@ -11,7 +11,6 @@ import {
 import Block from "./block.js";
 import Light from "./light.js";
 import Entity from "./entity.js";
-import player from "./player.js";
 
 let COLORS = {
     floor: "#376707", // "#ff6361"
@@ -49,7 +48,7 @@ class view {
 
         this.player = player;
         this.world = player.getWorld();
-        this.map = this.world.map;
+        this.map = this.world.getMap();
 
         if (MAX_RAYS <= 0) this.numberOfRays = this.SCREEN_WIDTH
         else this.numberOfRays = MAX_RAYS
@@ -125,7 +124,7 @@ class view {
     }
 
     renderScene(rays) {
-        this.drawSkybox(getImage(this.world.sky))
+        this.drawSkybox(getImage(this.world.getSky()))
         const drawnFloors = []
         const drawnCeilings = []
         this.drawTexturedFloors(rays, drawnFloors, drawnCeilings);
@@ -151,7 +150,7 @@ class view {
                 //ignore out of bounds or invisible blocks
                 if (objectToDraw.isInvisible()) continue
                 if(objectToDraw.isDrawBackgroundImgInstead()){
-                    const img =  (objectToDraw.isUsingWallImageAsBackgroundImg() ? getImage(objectToDraw.getWallImageName()) : getImage(this.world.sky))
+                    const img =  (objectToDraw.isUsingWallImageAsBackgroundImg() ? getImage(objectToDraw.getWallImageName()) : getImage(this.world.getSky()))
                     this.drawWallWithSkyboxTexture(ray, i, toDrawData,img)
                     continue
                 }

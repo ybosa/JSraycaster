@@ -7,7 +7,7 @@ import Controller from "./controller.js";
 import {CELL_SIZE,GAME_TICK_RATE} from "./config.js";
 
 
-let world = new World()
+let world = new World(50,50)
 let player = new Player(CELL_SIZE * 2.5,CELL_SIZE * 12.5,toRadians(90),0,world)
 generateDemoMap(world)
 let viewer = new view(player)
