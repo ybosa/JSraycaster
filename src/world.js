@@ -124,9 +124,14 @@ class World{
         else return null
     }
 
-    getEntities(mapX, mapY){
+    getEntities(mapX, mapY,player){
         let x = Math.floor(mapX)
         let y = Math.floor(mapY)
+        if(this.entities[x+","+y] && this.entities[x+","+y].length > 1 && player) {
+            this.entities[mapX + "," + mapY].sort((a, b) =>
+                ((player.getX() - a.getX()) * (player.getX() - a.getX()) + (player.getY() - a.getY()) * (player.getY() - a.getY()) )-
+                ((player.getX() - b.getX()) * (player.getX() - b.getX()) + (player.getY() - b.getY()) * (player.getY() - b.getY())))
+        }
         return this.entities[x+","+y]
     }
 

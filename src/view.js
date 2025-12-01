@@ -11,6 +11,7 @@ import {
 import Block from "./block.js";
 import Light from "./light.js";
 import Entity from "./entity.js";
+import player from "./player.js";
 
 let COLORS = {
     floor: "#376707", // "#ff6361"
@@ -450,7 +451,7 @@ class view {
 
             //not out of bounds so add sprite to array if it exists
             if(this.world.getEntities(mapX,mapY) && this.world.getEntities(mapX,mapY).length > 0 ){
-                this.world.getEntities(mapX,mapY).forEach((entity) =>{
+                this.world.getEntities(mapX,mapY,this.player).forEach((entity) =>{
                     if(entity.hasSprite()) {
                         const sample = this.calculateSpriteSample(entity, angle)
                         const sampleWidth = this.calculateSpriteSampleWidth(entity, angle, prevAngle)
