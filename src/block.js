@@ -17,11 +17,9 @@ class Block {
     #wallImageName = "missing.png"; //debug texture
     #wallImageIsScreenSpaceNotWorld = false; //allows for weird effect where texture dosent move as you do
     #floor = false; //has a floor to draw
-    #floorColour = "[150,0,150,1]"  //approx average of debug texture colour
     #floorImageName = "missing.png"; //debug texture
     #ceiling = false; //has a floor to draw
     #ceilingImageName = "missing.png"; //debug texture
-    #ceilingColour = "[150,0,150,1]" //approx average of debug texture colour
 
 
     //boolean getters
@@ -38,8 +36,6 @@ class Block {
 
     //get properties
     static getStaticInstance(BlockClass){return this.#staticBlockClassesMap.get(BlockClass)}
-    getFloorColour(){return this.#floorColour}
-    getCeilingColour(){return this.#ceilingColour}
     getOpacity(){return this.#opacity}
 
     //get image properties
@@ -110,12 +106,10 @@ class Block {
             this.#opacity = (blockData.hasOwnProperty("opacity")) ? blockData.opacity : this.#opacity;
 
             this.#floor = (blockData.hasOwnProperty("floor")) ? blockData.floor : this.#floor;
-            this.#floorColour = (blockData.hasOwnProperty("floorColour")) ? blockData.floorColour : this.#floorColour;
             this.#floorImageName = (blockData.hasOwnProperty("floorImageName")) ? blockData.floorImageName : this.#floorImageName;
 
             this.#ceiling = (blockData.hasOwnProperty("ceiling")) ? blockData.ceiling : this.#ceiling;
             this.#ceilingImageName = (blockData.hasOwnProperty("ceilingImageName")) ? blockData.ceilingImageName : this.#ceilingImageName;
-            this.#ceilingColour = (blockData.hasOwnProperty("ceilingColour")) ? blockData.ceilingColour : this.#ceilingColour;
             this.#drawBackgroundImgInstead = (blockData.hasOwnProperty("drawBackgroundImgInstead")) ? blockData.drawBackgroundImgInstead : this.#drawBackgroundImgInstead;
 
 
@@ -123,12 +117,10 @@ class Block {
             if(this.isWall() && !(this.isTransparent() || this.isInvisible() || this.isDrawBackgroundImgInstead())){
                 if(!this.isFloor()){
                     this.#floor = true;
-                    //fixme does not calc floor colour
                     this.#floorImageName = this.getWallImageName()
                 }
                 if(!this.isCeiling()){
                     this.#ceiling = true;
-                    //fixme does not calc ceiling colour
                     this.#ceilingImageName = this.getWallImageName();
                 }
             }

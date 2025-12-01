@@ -32,8 +32,6 @@ class FloorAndCeiling extends oldBlock{
             floorImageName : "wall.png",
             ceilingImageName : "wall.png",
 
-            floorColour : [255,255,255,1], //floors and ceilings drawn as solid colour blocks, not textures due to performance cost
-            ceilingColour : [125,125,125,1],//floors and ceilings drawn as solid colour blocks, not textures due to performance cost
         }
         const merged ={...defaultBlockData, ...blockdata};
         super(merged);
@@ -49,8 +47,6 @@ class Glass extends oldBlock{
             transparent : true,
             opacity: 0.125,
             wallImageName : "glass.png",
-            ceilingColour : [0,0,0,1],
-            floorColour : [0,0,255,1]
         }
         const merged ={...defaultBlockData, ...blockdata};
         super(merged);
