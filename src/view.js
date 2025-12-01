@@ -55,7 +55,7 @@ class view {
 
         this.distanceBetweenRaysOnScreen = 2*Math.tan(FOV/2) / this.numberOfRays //equal distance between rays on the screen, used to fix distortion
 
-
+        this.initImages()
     }
 
     changeNumRays(number){
@@ -1129,6 +1129,27 @@ class view {
                 }*!/
     }*/
 
+
+    initImages(){
+        getImage(this.world.getSky());
+        this.map.forEach((row, y) => {
+            row.forEach((block, x) => {
+                if(!block) return
+                if(! (block instanceof Block)){
+                    console.error("Cannot Initialise ImageName for Cell at : x" + x +", y" + y , " \nCell is not a block:");
+                    console.error(block)
+                    return;
+                }
+                getImage(block.getWallImageName())
+                getImage(block.getFloorImageName())
+                getImage(block.getCeilingImageName())
+
+                this.world.getEntities(x,y)?.forEach(entity => {
+                    if(entity) getImage(entity.getSpriteImageName())
+                })
+            });
+        });
+    }
 }
 
 export function toRadians(deg) {
@@ -1142,6 +1163,7 @@ function fixFishEye(distance, angle, playerAngle) {
 }
 
 function getImage(imageName) {
+    if(!imageName) return missingImgName
     if (imageSet[imageName]) {
         return imageSet[imageName]
     } else {
@@ -1151,29 +1173,29 @@ function getImage(imageName) {
 }
 
 function loadImages() {
-    let removeSet = new Set()
-    missingIMGSet.forEach(image => {
-        if (imageSet[image] && imageSet[image] !== imageSet[missingImgName]) {
-            removeSet.add(image)
+    missingIMGSet.forEach(imageName => {
+        if (imageSet[imageName] && imageSet[imageName] !== imageSet[missingImgName]) {
             return;
         }
-        if (DEBUG_MODE) console.log("loading img: " + image)
+        if (DEBUG_MODE) console.log("loading img: " + imageName)
         let loadIMG = new Image()
-        loadIMG.src = IMAGE_PATH + image
-        if (!loadIMG && DEBUG_MODE) {
-            console.log("error loading image: " + image)
+        loadIMG.src = IMAGE_PATH + imageName
+
+        loadIMG.onload = () => {
+            imageSet[imageName] = loadIMG
+            missingIMGSet.delete(imageName)
+            if (DEBUG_MODE) console.log("loaded img: " + imageName)
+        }
+        loadIMG.onerror = () => {
+            if (DEBUG_MODE) {
+                console.log("error loading image: " + imageName)
+            }
+            imageSet[imageName] = imageSet[missingImgName]
+            missingIMGSet.delete(imageName)
         }
 
-        if (!loadIMG) {
-            imageSet[image] = imageSet[missingImgName]
-            removeSet.add(image)
-        } else {
-            imageSet[image] = loadIMG
-            removeSet.add(image)
-        }
     })
 
-    removeSet.forEach(image => missingIMGSet.delete(image))
 }
 
 function initMissingIMG() {
