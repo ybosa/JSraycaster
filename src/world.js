@@ -1,13 +1,13 @@
 "use strict";
-import {FloorAndCeiling,Glass,Air, ABYSS,oldBlock} from "./exampleblocks.js";
+import {FloorAndCeiling,Glass,Air, oldBlock} from "./exampleblocks.js";
 import {CELL_SIZE} from "./config.js";
-import LIGHT, {Light} from "./light.js";
+import Entity from "./entity.js";
 
 class World{
-    map;
-    lightMap; // contains an object of {colour value , [array of light sources]}
-    sky = "sky.png"
-    entities = new Set();
+    #map;
+    #lightMap; // contains an object of {colour value , [array of light sources]}
+    #sky = "sky.png"
+    #entities = new Set();
 
     //TODO IMPLEMENT ENTITY COLLISION
     collides(x,y,player){
@@ -18,19 +18,19 @@ class World{
         if(this.getEntities(mapX,mapY,player)) {
             for (let i = 0; i < this.getEntities(mapX, mapY,player).length; i++) {
                 let entity = this.getEntities(mapX, mapY,player)[i]
-                if (!entity.passable && (Math.pow(entity.x - x, 2) + Math.pow(entity.y - y, 2)) <= entity.width * entity.width)
+                if (!entity.isPassable() && (Math.pow(entity.getX() - x, 2) + Math.pow(entity.getY() - y, 2)) <= entity.getWidth() * entity.getHeight())
                     return true
             }
         }
 
-        return this.outOfMapBounds(mapX,mapY) || !this.map[mapY][mapX].isPassable()
+        return this.outOfMapBounds(mapX,mapY) || !this.#map[mapY][mapX].isPassable()
     }
 
     outOfMapBounds(mapX, mapY) {
-        return mapX < 0 || mapX >= this.map[0].length || mapY < 0 || mapY >= this.map.length;
+        return mapX < 0 || mapX >= this.#map[0].length || mapY < 0 || mapY >= this.#map.length;
     }
 
-    genMap(x = 25,y=25){
+    genMap(x ,y){
         let block = new oldBlock({wallImageName:"wall.png"})
 
         let glass= new Glass()
@@ -64,7 +64,7 @@ class World{
     }
 
     genLightMap(map){
-        // if(!this.map && !this.map.length && !this.map[0].length) return null
+        // if(!this.#map && !this.#map.length && !this.#map[0].length) return null
         let lenY = map.length
         let lenX = map[0].length
 
@@ -78,89 +78,114 @@ class World{
         }
         return lightMap;
     }
-
-    placeLight(light){
-        this.placeLightHelper(light,Math.floor(light.x/CELL_SIZE),Math.floor(light.y/CELL_SIZE),Math.floor(light.radius/CELL_SIZE) , new Set())
+    placeNewLight(x,y,light){
+        const entity = new Entity(x,y,0,0,null,light,true);
+        this.putEntity(entity);
     }
 
-    placeLightHelper(light,mapX,mapY,i,visited){
+    #placeLight(entity){
+        this.#placeLightHelper(entity,Math.floor(entity.getX()/CELL_SIZE),Math.floor(entity.getY()/CELL_SIZE),Math.floor(entity.getLight().getRadius()/CELL_SIZE) , new Set())
+    }
+
+    #placeLightHelper(entity,mapX,mapY,i,visited){
+        const entityX = entity.getX();
+        const entityY = entity.getY();
+
+        const light = entity.getLight()
         //FIXME DEBUG THE BOUNDARY AND STOPPING CONDITIONS
         if(!light || i < 0 || this.outOfMapBounds(mapX,mapY) ||
-            !this.map[mapY][mapX].isTransparent()  )return
+            !this.#map[mapY][mapX].isTransparent()  )return
 
-        else if(!this.lightMap[mapY][mapX]) {
-            let colour = light.calcColourAtDist(mapX*CELL_SIZE,mapY*CELL_SIZE);
+        else if(!this.#lightMap[mapY][mapX]) {
+            let colour = light.calcColourAtDist(entityX,entityY, mapX*CELL_SIZE,mapY*CELL_SIZE);
             if(colour) {
-                let lights = []
-                lights.push(light)
-                this.lightMap[mapY][mapX] = {colour, lights}
+                let lightEntities = []
+                lightEntities.push(entity)
+                this.#lightMap[mapY][mapX] = {colour, lightEntities: lightEntities}
                 visited[mapY + "," + mapX] = i
             }
         }
-        else if(this.lightMap[mapY][mapX].lights.includes(light)){return;}
+        else if(this.#lightMap[mapY][mapX].lightEntities.includes(entity)){return;}
         else {
-            let lights =this.lightMap[mapY][mapX].lights
-            lights.push(light)
-            let colour = LIGHT.averageColourValues(lights,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
-            this.lightMap[mapY][mapX] = {colour,lights}
+            let lightEntities =this.#lightMap[mapY][mapX].lightEntities
+            lightEntities.push(entity)
+            let colour = entity.getLight().averageColourValues(lightEntities,(mapX+0.5)*CELL_SIZE,(mapY+0.5)*CELL_SIZE)
+            this.#lightMap[mapY][mapX] = {colour,lightEntities}
             visited[ mapY+","+mapX] =i
         }
-        this.placeLightHelper(light,mapX,mapY+1,i-1,visited)
-        this.placeLightHelper(light,mapX,mapY-1,i-1,visited)
-        this.placeLightHelper(light,mapX+1,mapY,i-1,visited)
-        this.placeLightHelper(light,mapX-1,mapY,i-1,visited)
+        this.#placeLightHelper(entity,mapX,mapY+1,i-1,visited)
+        this.#placeLightHelper(entity,mapX,mapY-1,i-1,visited)
+        this.#placeLightHelper(entity,mapX+1,mapY,i-1,visited)
+        this.#placeLightHelper(entity,mapX-1,mapY,i-1,visited)
     }
 
     getLightColour(mapX,mapY){
-        if(this.lightMap[mapY][mapX]) return this.lightMap[mapY][mapX].colour
+        if(this.#lightMap[mapY][mapX]) return this.#lightMap[mapY][mapX].colour
         else return null
     }
 
     getEntities(mapX, mapY,player){
         let x = Math.floor(mapX)
         let y = Math.floor(mapY)
-        if(this.entities[x+","+y] && this.entities[x+","+y].length > 1 ) {
-            this.entities[mapX + "," + mapY].sort((a, b) => //FIXME WHY IS THIS HERE, IS IT NEEDED?
-                ((player.x - a.x) * (player.x - a.x) + (player.y - a.y) * (player.y - a.y) )-
-                ((player.x - b.x) * (player.x - b.x) + (player.y - b.y) * (player.y - b.y)))
+        if(this.#entities[x+","+y] && this.#entities[x+","+y].length > 1 && player) {
+            this.#entities[mapX + "," + mapY].sort((a, b) =>
+                ((player.getX() - a.getX()) * (player.getX() - a.getX()) + (player.getY() - a.getY()) * (player.getY() - a.getY()) )-
+                ((player.getX() - b.getX()) * (player.getX() - b.getX()) + (player.getY() - b.getY()) * (player.getY() - b.getY())))
         }
-        return this.entities[x+","+y]
+        return this.#entities[x+","+y]
     }
 
     putEntity(entity){
-        let x = Math.floor(entity.x / CELL_SIZE)
-        let y = Math.floor(entity.y/CELL_SIZE)
+        let x = Math.floor(entity.getX() / CELL_SIZE)
+        let y = Math.floor(entity.getY() / CELL_SIZE)
 
         this.putEntityCoords(entity,x,y)
+        if(entity.hasLight()){
+            this.#placeLight(entity)
+        }
+        if(entity.hasSprite())
+            this.#placeSprite(entity)
+    }
+
+    #placeSprite(entity){
+        //works with proportions (0 to 1) because it is easier
+        let xDeci = entity.getX()/CELL_SIZE - Math.floor(entity.getX()/CELL_SIZE)
+        let yDeci = entity.getY()/CELL_SIZE - Math.floor(entity.getY()/CELL_SIZE)
+        let propHW = entity.getWidth()/ (CELL_SIZE * 2) //proportional half width
+        let overlap = entity.getWidth() > CELL_SIZE || xDeci + propHW > 1 || xDeci - propHW <0 || yDeci + propHW > 1 || yDeci - propHW <0
+        if(overlap){
+            let mapX = Math.floor(entity.getX()/CELL_SIZE)
+            let mapY = Math.floor(entity.getY()/CELL_SIZE)
+            let cellRadius = Math.floor (propHW) +1 //radius of circle described by entity
+            let cellRadius2 = (cellRadius-1) * (cellRadius-1) //radius^2 of circle described by entity
+            for (let y = -cellRadius; y <= cellRadius; y++){
+                for (let x = -cellRadius; x <= cellRadius; x++){
+                    if(this.outOfMapBounds(mapX+x,mapY+y) || (x) * (x) + (y)*(y) >= cellRadius2 ) {} //fixme potential bug? unused if
+                    this.putEntityCoords(entity,mapX+x,mapY+y)
+
+                }
+            }
+
+        }
     }
 
     putEntityCoords(entity, mapX,mapY){
-
-        if(!this.entities[mapX+","+mapY]){
-            this.entities[mapX+","+mapY] = []
+        if(!this.#entities[mapX+","+mapY]){
+            this.#entities[mapX+","+mapY] = []
         }
-        this.entities[mapX+","+mapY].push(entity)
+        this.#entities[mapX+","+mapY].push(entity)
     }
 
-    genEntities(){
-        this.placeLight(new Light((15+0.5)*CELL_SIZE, (15+0.5)*CELL_SIZE, 5*CELL_SIZE, [255,125,125,0.25],0))
-        return
+    getMap(){return this.#map}
 
-        let lenY = this.map.length
-        let lenX = this.map[0].length
-        for(let i = 0; i < lenY; i++){
-            for(let j = 0; j < lenX; j++){
-                if((this.map)[i][j].isPassable() && (this.map)[i][j].isCeiling()  &&(this.map)[i][j].isTransparent() && Math.random() < 0.05 ){
-                    this.placeLight(new Light((j+0.5)*CELL_SIZE, (i+0.5)*CELL_SIZE, 10*CELL_SIZE, [255,125,125,0.25],0.25))
-                }
-            }
-        }
-    }
+    getLightMap(){return this.#lightMap}
 
-    constructor() {
-        this.map = this.genMap()
-        this.lightMap = this.genLightMap(this.map)
-        this.genEntities()
+    getSky(){return this.#sky}
+
+    constructor(x,y) {
+        this.#entities = new Set()
+        this.#map = this.genMap(x,y)
+        this.#lightMap = this.genLightMap(this.#map)
     }
 }
 

@@ -1,15 +1,12 @@
 "use strict";
-import Sprite from "./sprite.js";
 import {ABYSS, Air, FloorAndCeiling, Glass, oldBlock} from "./exampleblocks.js"
 import {CELL_SIZE} from "./config.js";
 import {Light} from "./light.js";
 import Block from "./block.js";
+import Entity from "./entity.js";
 
 function generateDemoMap(world){
-    world.entities = new Set()
-    world.map = world.genMap(50,50)
-    world.lightMap = world.genLightMap(world.map)
-    const map = world.map
+    const map = world.getMap()
 
     const air = new Air()
     let stoneWall = new Block({wallImageName:"wall.png"})
@@ -84,8 +81,8 @@ function generateDemoMap(world){
     new bed(14.5*CELL_SIZE,4.5*CELL_SIZE,world)
     new bed(17.5*CELL_SIZE,4.5*CELL_SIZE,world)
 
-    world.placeLight(new Light(13*CELL_SIZE,7*CELL_SIZE,20*CELL_SIZE,[0,0,0,0.75],0))
-    world.placeLight(new Light(13*CELL_SIZE,8*CELL_SIZE,4*CELL_SIZE,[255,255,255,0.05],2))
+    world.placeNewLight(13*CELL_SIZE,7*CELL_SIZE, new Light(20*CELL_SIZE,[0,0,0,0.75],0))
+    world.placeNewLight(13*CELL_SIZE,8*CELL_SIZE, new Light(4*CELL_SIZE,[255,255,255,0.05],2))
 
     //garden
     fillAreaWithFunc(map,()=>{
@@ -175,9 +172,9 @@ function generateDemoMap(world){
     fillArea(map,whiteFloor,22,30,12,20)
     drawPerim(map,white,22,30,12,20)
 
-    world.placeLight(new Light(24*CELL_SIZE,14*CELL_SIZE,8*CELL_SIZE,[200,0,0,0.5],2))
-    world.placeLight(new Light(25*CELL_SIZE,19*CELL_SIZE,8*CELL_SIZE,[0,200,0,0.35],2))
-    world.placeLight(new Light(28*CELL_SIZE,16*CELL_SIZE,8*CELL_SIZE,[0,0,200,0.25],2))
+    world.placeNewLight(24*CELL_SIZE,14*CELL_SIZE, new Light(8*CELL_SIZE,[200,0,0,0.5],2))
+    world.placeNewLight(25*CELL_SIZE,19*CELL_SIZE, new Light(8*CELL_SIZE,[0,200,0,0.35],2))
+    world.placeNewLight(28*CELL_SIZE,16*CELL_SIZE, new Light(8*CELL_SIZE,[0,0,200,0.25],2))
 
     //starting area
     drawRow(map,ABYSS,9,1,5)
@@ -227,9 +224,9 @@ function generateDemoMap(world){
             floor:true,
         })
     },13,13,9,9)
-    world.placeLight(new Light(13*CELL_SIZE,9*CELL_SIZE,CELL_SIZE,[0,0,0,0.5],0))
-    world.placeLight(new Light(13*CELL_SIZE,10*CELL_SIZE,CELL_SIZE,[0,0,0,0.33],0))
-    world.placeLight(new Light(13*CELL_SIZE,11*CELL_SIZE,CELL_SIZE,[0,0,0,0.25],0))
+    world.placeNewLight(13*CELL_SIZE,9*CELL_SIZE,new Light(CELL_SIZE,[0,0,0,0.5],0))
+    world.placeNewLight(13*CELL_SIZE,10*CELL_SIZE,new Light(CELL_SIZE,[0,0,0,0.33],0))
+    world.placeNewLight(13*CELL_SIZE,11*CELL_SIZE,new Light(CELL_SIZE,[0,0,0,0.25],0))
 
     //disco room entry
     fillAltArea(map,stoneFloorRoofW,stoneFloorRoofB,20,22,16,16)
@@ -299,22 +296,17 @@ function drawPerim(map,block,colStart,colStop,rowStart,rowStop){
 }
 
 
-class bed extends Sprite{
-
+class bed extends Entity{
     constructor(x, y, world) {
-        super(x, y);
-        this.imageName = "bed.png"
-        this.placeSprite(world)
+        super(x, y,CELL_SIZE,CELL_SIZE,"bed.png",null,false);
+        world.putEntity(this)
     }
 }
 
-class tree extends Sprite{
+class tree extends Entity{
     constructor(x, y, world) {
-        super(x, y);
-        this.width = CELL_SIZE
-        this.height =2.25 * CELL_SIZE
-        this.imageName = "tree.png"
-        this.placeSprite(world)
+        super(x, y,CELL_SIZE,2.25 * CELL_SIZE,"tree.png",null,false);
+        world.putEntity(this)
     }
 }
 
