@@ -1200,7 +1200,8 @@ function loadImages() {
         loadIMG.onload = () => {
             imageSet[imageName] = loadIMG
             missingIMGSet.delete(imageName)
-            averageImageColourSet[imageName] = calculateAverageColorFromImage(loadIMG)
+            averageImageColourSet[imageName] = averageImageColourSet[missingImgName] //temp colour
+            calculateAverageColorFromImage(imageName) // set colour here
             if (DEBUG_MODE) console.log("loaded img: " + imageName)
         }
         loadIMG.onerror = () => {
@@ -1216,35 +1217,32 @@ function loadImages() {
 
 }
 
-function calculateAverageColorFromImage(img) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+async function calculateAverageColorFromImage(imageName) {
+    fetch(IMAGE_PATH + imageName)
+        .then(res => res.blob())
+        .then(blob => createImageBitmap(blob))
+        .then(bitmap => {
+            const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+            const ctx = canvas.getContext("2d");
 
-    // Match canvas size to image
-    canvas.width = img.width;
-    canvas.height = img.height;
+            ctx.drawImage(bitmap, 0, 0);
 
-    // Draw image onto the canvas
-    ctx.drawImage(img, 0, 0);
+            const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
 
-    // Get pixel data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+            let r = 0, g = 0, b = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                r += data[i];
+                g += data[i + 1];
+                b += data[i + 2];
+            }
 
-    let r = 0, g = 0, b = 0;
-    const totalPixels = data.length / 4;
+            const count = data.length / 4;
+            r = Math.round(r / count);
+            g = Math.round(g / count);
+            b = Math.round(b / count);
 
-    for (let i = 0; i < data.length; i += 4) {
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-    }
-
-    // Compute average
-    r = Math.round(r / totalPixels);
-    g = Math.round(g / totalPixels);
-    b = Math.round(b / totalPixels);
-    return [r,g,b,1]
+            averageImageColourSet[imageName] = [r, g, b, 1];        // send result back
+        });
 }
 
 function initMissingIMG() {
