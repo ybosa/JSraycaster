@@ -61,6 +61,39 @@ class Controller{
             player.setAngle( player.getAngle() + toRadians(event.movementX / 10));
         });
 
+        let initialTouch = null;
+
+        canvas.addEventListener("touchstart", function (event) {
+            if (event.touches.length === 1) {
+                initialTouch = {x: event.touches[0].clientX, y: event.touches[0].clientY};
+            }
+        });
+
+        canvas.addEventListener("touchmove", function (event) {
+            if (event.touches.length === 1 && initialTouch) {
+                const deltaX = event.touches[0].clientX - initialTouch.x;
+                const deltaY = event.touches[0].clientY - initialTouch.y;
+                const dist = Math.hypot(deltaX, deltaY);
+
+                //move less than 25 px treat as a movement input
+                if (dist < 25){
+                    player.setSpeed(5*CELL_SIZE);
+                }
+                else {
+                    player.setAngle( player.getAngle() + toRadians(deltaX / 10));
+                }
+
+
+                initialTouch = {x: event.touches[0].clientX, y: event.touches[0].clientY};
+            }
+        });
+
+        canvas.addEventListener("touchend", function () {
+            initialTouch = null;
+            player.setSpeed(0);
+            player.setSidewaysSpeed(0);
+        });
+
     }
 }
 

@@ -46,21 +46,21 @@ $5.1) fix transparent tiles not rendering rear wall! - not worth implementing
 #21) game shouldn't crash if an img load fails!
 
 #22) generate floor and ceiling colour on the fly if not provided, based on image colour
-23) consider generating lower res textures (mipmapping?) from provided texture for far away textures. Improve performance? or just to remove jitter
 24) allow texturing blocks based on direction and time!
-25) fix the floors drawing underneath walls (issue 5.2) code so that it generates a new image using the bottom edge of the texture (or rotates img to align with floor base).
-    Currently, you can have a colour mismatch if the top of texture or sides is different from the bottom!
 
 30) custom ray collision math => allows for complex wall shapes
+33) consider generating lower res textures (mipmapping?) from provided texture for far away textures. Improve performance? or just to remove jitter
+35) fix the floors drawing underneath walls (issue 5.2) code so that it generates a new image using the bottom edge of the texture (or rotates img to align with floor base).
+    Currently, you can have a colour mismatch if the top of texture or sides is different from the bottom!
 
 
 100) replace solid colour floor draw with an average over a given distance to anti alias long distance draws
-    potentialy draw for a max of x pixels before switching to next draw colour?
+    potentially draw for a max of x pixels before switching to next draw colour?
 
 110) use affine textures for walls - check performance clipping may be too costly
-    potentialy only for long distance? obscured by a another object etc
+    potentially only for long distance? obscured by a another object etc
 
-200) redo entire algo sort everything by distance and draw one after the other so sprites dont draw over ceilings
+200) redo entire algo sort everything by distance and draw one after the other so sprites don't draw over ceilings
 
 300) add portals!
 
