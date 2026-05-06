@@ -61,7 +61,7 @@ class Controller{
             player.setAngle( player.getAngle() + toRadians(event.movementX / 10));
         });
 
-        canvas.addEventListener("touchmove", function (event) {
+        canvas.addEventListener("touchstart", function (event) {
             if (event.touches.length === 1) {
                 const touchX = event.touches[0].clientX;
 
