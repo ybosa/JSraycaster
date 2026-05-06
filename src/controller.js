@@ -61,35 +61,35 @@ class Controller{
             player.setAngle( player.getAngle() + toRadians(event.movementX / 10));
         });
 
-        let startTouch = null;
-        let startAngle = 0;
-
-        canvas.addEventListener("touchstart", function (event) {
-            if (event.touches.length === 1) {
-                startTouch = {
-                    x: event.touches[0].clientX,
-                    y: event.touches[0].clientY
-                };
-                startAngle = player.getAngle();
-            }
-        });
-
         canvas.addEventListener("touchmove", function (event) {
-            if (event.touches.length === 1 && startTouch) {
-                const deltaX = event.touches[0].clientX - startTouch.x;
-                const deltaY = event.touches[0].clientY - startTouch.y;
-                const dist = Math.hypot(deltaX, deltaY);
+            if (event.touches.length === 1) {
+                const touchX = event.touches[0].clientX;
 
-                if (dist < 25) {
+                const canvasRect = canvas.getBoundingClientRect();
+                const relativeX = touchX - canvasRect.left;
+                const width = canvasRect.width;
+
+                const leftZone = width * 0.33;
+                const rightZone = width * 0.66;
+
+                if (relativeX < leftZone) {
+                    // LEFT SIDE → turn left
+                    player.setAngle(player.getAngle() - toRadians(3));
+                    player.setSpeed(0);
+                }
+                else if (relativeX > rightZone) {
+                    // RIGHT SIDE → turn right
+                    player.setAngle(player.getAngle() + toRadians(3));
+                    player.setSpeed(0);
+                }
+                else {
+                    // MIDDLE → move forward
                     player.setSpeed(5 * CELL_SIZE);
-                } else {
-                    player.setAngle(startAngle + toRadians(deltaX / 5));
                 }
             }
         });
 
         canvas.addEventListener("touchend", function () {
-            startTouch = null;
             player.setSpeed(0);
             player.setSidewaysSpeed(0);
         });
